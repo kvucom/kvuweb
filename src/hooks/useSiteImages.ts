@@ -20,6 +20,8 @@ const DEFAULTS: SiteImages = {
   'home-cat-chakki':  '/products/mobile-chakki-oil.webp',
   'about-hero':       '/backgrounds/rice-field-hero.webp',
   'about-story':      '/backgrounds/industrial-story.webp',
+  'about-partner-1':  '/managing_partner_1.png',
+  'about-partner-2':  '/managing_partner_2.png',
 }
 
 export function useSiteImages() {

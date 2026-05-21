@@ -50,6 +50,7 @@ export default function Footer() {
               { label: t('nav.about'), to: '/about' },
               { label: t('home.categories.riceMill.title'), to: '/products?cat=rice-mill' },
               { label: t('home.categories.poultry.title'), to: '/products?cat=poultry-feed' },
+              { label: t('nav.dealership'), to: '/dealership' },
               { label: t('nav.contact'), to: '/contact' },
             ].map(link => (
               <li key={link.to}>
@@ -106,8 +107,14 @@ export default function Footer() {
           <p className="font-grotesk text-[10px] uppercase tracking-widest text-white/30">
             © {new Date().getFullYear()} KRISHI VIKAS UDYOG. {t('footer.rights')}
           </p>
-          <p className="font-grotesk text-[10px] uppercase tracking-widest text-white/30">
-            {t('footer.precision')}
+          <p className="text-white/50 text-sm">
+            Designed & Developed by{' '}
+            <span
+              className="text-secondary-gold hover:text-white transition-colors duration-300"
+              style={{ fontFamily: "'Bastliga One', sans-serif", fontSize: '1.6rem', fontWeight: 'normal' }}
+            >
+              Safwan Raza
+            </span>
           </p>
         </div>
       </div>

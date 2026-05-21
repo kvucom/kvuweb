@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Plan - Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background: #002e1c; 
+            color: #fff; 
+            overflow: hidden; 
+            height: 100vh; 
+            width: 100vw; 
+            position: relative;
+        }
+
+        /* Slide layout and transition effects */
+        .slide { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 60px 80px; 
+            opacity: 0;
+            visibility: hidden;
+            z-index: 1;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                        transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                        visibility 0.8s;
+            transform: scale(0.96) translateY(30px);
+        }
+
+        .slide.active { 
+            opacity: 1;
+            visibility: visible;
+            z-index: 2;
+            transform: scale(1) translateY(0);
+        }
+
+        /* Branding colors */
+        .slide:nth-child(odd) { 
+            background: linear-gradient(135deg, #002e1c 0%, #001f13 50%, #00120b 100%); 
+        }
+        .slide:nth-child(even) { 
+            background: linear-gradient(135deg, #0f3024 0%, #0a1f18 50%, #05100c 100%); 
+        }
+
+        .slide-number { 
+            position: absolute; 
+            bottom: 35px; 
+            right: 40px; 
+            font-size: 0.9rem; 
+            opacity: 0.6; 
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: #fed65b;
+        }
+
+        h1 { font-family: 'Space Grotesk', sans-serif; font-size: 3.5rem; margin-bottom: 20px; text-align: center; font-weight: 700; letter-spacing: -0.02em; }
+        h2 { font-family: 'Space Grotesk', sans-serif; font-size: 2.6rem; margin-bottom: 30px; color: #fed65b; font-weight: 700; letter-spacing: -0.01em; }
+        h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; margin: 20px 0 10px; color: #ffe082; font-weight: 600; }
+        p { font-size: 1.25rem; line-height: 1.8; max-width: 850px; text-align: center; opacity: 0.9; }
+        ul { font-size: 1.2rem; line-height: 2; max-width: 750px; list-style-position: inside; }
+        li { margin: 8px 0; opacity: 0.95; }
+        
+        table { width: 85%; border-collapse: separate; border-spacing: 0; margin: 30px 0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        th, td { border: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; text-align: center; font-size: 1.05rem; }
+        th { background: rgba(254, 214, 91, 0.1); color: #fed65b; font-family: 'Space Grotesk', sans-serif; font-weight: 600; letter-spacing: 0.05em; }
+        tr:last-child td { border-bottom: none; }
+        td { background: rgba(255,255,255,0.02); }
+
+        .highlight { color: #fed65b; font-weight: bold; }
+        .subtitle { font-size: 1.5rem; opacity: 0.8; margin-top: 10px; font-weight: 300; }
+        
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; width: 85%; margin: 30px 0; }
+        .card { 
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 30px; 
+            border-radius: 16px; 
+            backdrop-filter: blur(12px); 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: rgba(254, 214, 91, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-5px);
+        }
+        .card h3 { margin-top: 0; color: #fed65b; }
+        
+        .cover { text-align: center; }
+        .cover h1 { font-size: 4.2rem; margin-bottom: 25px; background: linear-gradient(135deg, #fff 60%, #fed65b 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .cover .tagline { font-size: 1.8rem; opacity: 0.8; margin-bottom: 50px; font-family: 'Space Grotesk', sans-serif; color: #fed65b; }
+        .cover .meta { font-size: 1.1rem; opacity: 0.6; }
+        
+        .cost-box { 
+            background: rgba(40, 167, 69, 0.12); 
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            padding: 24px 60px; 
+            border-radius: 16px; 
+            margin: 30px 0; 
+            box-shadow: 0 4px 20px rgba(40, 167, 69, 0.15);
+        }
+        .cost-box h2 { color: #4caf50; margin: 0; font-size: 2.4rem; }
+        
+        .architecture { display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 25px 0; }
+        .arch-box { 
+            background: rgba(255, 255, 255, 0.04); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 36px; 
+            border-radius: 10px; 
+            text-align: center; 
+            min-width: 320px; 
+            font-size: 1.15rem;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .arrow { font-size: 2.2rem; opacity: 0.6; color: #fed65b; }
+        code { background: rgba(254, 214, 91, 0.08); border: 1px solid rgba(254, 214, 91, 0.15); color: #ffe082; padding: 4px 10px; border-radius: 6px; font-size: 0.95em; font-family: monospace; }
+
+        /* Animation delays for individual content items inside active slides */
+        .slide > * {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1), transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .slide.active > * {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slide.active > *:nth-child(1) { transition-delay: 0.15s; }
+        .slide.active > *:nth-child(2) { transition-delay: 0.3s; }
+        .slide.active > *:nth-child(3) { transition-delay: 0.45s; }
+        .slide.active > *:nth-child(4) { transition-delay: 0.6s; }
+        .slide.active > *:nth-child(5) { transition-delay: 0.75s; }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            z-index: 100;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #fed65b, #ffe082);
+            width: 0%;
+            box-shadow: 0 0 10px rgba(254, 214, 91, 0.5);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Slide Controllers */
+        .controls {
+            position: absolute;
+            bottom: 35px;
+            left: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            backdrop-filter: blur(12px);
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            user-select: none;
+        }
+        .btn-nav:hover:not(:disabled) {
+            background: rgba(254, 214, 91, 0.15);
+            border-color: #fed65b;
+            color: #fed65b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(254, 214, 91, 0.2);
+        }
+        .btn-nav:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .btn-nav:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        @media print {
+            .slide { page-break-after: always; position: relative; min-height: auto; padding: 40px; opacity: 1 !important; visibility: visible !important; transform: none !important; }
+            body { background: #fff; color: #000; overflow: visible; height: auto; }
+            .slide:nth-child(odd), .slide:nth-child(even) { background: #fff; }
+            h1, h2, h3 { color: #004d40; }
+            .card { background: #f5f5f5; border: 1px solid #ccc; color: #000; }
+            .card h3 { color: #004d40; }
+            th { background: #004d40; color: #fff; }
+            td { background: #fff; color: #000; border: 1px solid #ccc; }
+            .controls, .progress-bar-container { display: none !important; }
+            .slide-number { color: #004d40; }
+            .slide > * { opacity: 1 !important; transform: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Progress Bar -->
+    <div class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar"></div>
+    </div>
+
+    <!-- Presentation Slides -->
+    <div class="slide cover">
+        <h1>Krishi Vikas Udyog</h1>
+        <div class="tagline">Complete Deployment Plan</div>
+        <p>Production-Ready Full Stack Setup<br>Frontend + Backend + Domain + Security</p>
+        <div class="meta">
+            <p style="margin-top: 60px;">Prepared by: <strong>Safwan Raza</strong></p>
+            <p>May 22, 2026 | Version 1.0</p>
+        </div>
+        <div class="slide-number">1 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Agenda</h2>
+        <ul>
+            <li>Architecture Overview</li>
+            <li>Phase 1: Pre-Deployment Checklist</li>
+            <li>Phase 2: Frontend Deploy on Vercel</li>
+            <li>Phase 3: Domain DNS Configuration</li>
+            <li>Phase 4: Supabase Security</li>
+            <li>Phase 5: Post-Deployment Testing</li>
+            <li>Cost Breakdown</li>
+            <li>Future Scaling</li>
+        </ul>
+        <div class="slide-number">2 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Architecture Overview</h2>
+        <h3>Tech Stack</h3>
+        <div class="grid">
+            <div class="card">
+                <h3>Frontend</h3>
+                <p>React 19 + TypeScript<br>Vite + Tailwind CSS<br>Framer Motion + i18next</p>
+            </div>
+            <div class="card">
+                <h3>Backend</h3>
+                <p>Supabase (PostgreSQL)<br>Auth + Storage<br>EmailJS Integration</p>
+            </div>
+        </div>
+        <h3>Deployment Flow</h3>
+        <div class="architecture">
+            <div class="arch-box">Users</div>
+            <div class="arrow">↓</div>
+            <div class="arch-box">Cloudflare DNS + CDN</div>
+            <div class="arrow">↓</div>
+            <div class="arch-box">Vercel (Frontend)</div>
+            <div class="arrow">↓</div>
+            <div class="arch-box">Supabase (Backend)</div>
+        </div>
+        <div class="slide-number">3 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Phase 1: Pre-Deployment Checklist</h2>
+        <h3>Environment Variables</h3>
+        <p><code>VITE_SUPABASE_URL</code>, <code>VITE_SUPABASE_ANON_KEY</code><br><code>VITE_EMAILJS_PUBLIC_KEY</code>, <code>SERVICE_ID</code>, <code>TEMPLATE_ID</code></p>
+        <h3>Build Verification</h3>
+        <ul>
+            <li><code>npm install</code> - Install dependencies</li>
+            <li><code>npx tsc -b</code> - TypeScript check</li>
+            <li><code>npm run build</code> - Production build</li>
+            <li><code>npm run preview</code> - Test locally</li>
+        </ul>
+        <h3>GitHub Setup</h3>
+        <ul>
+            <li>Initialize repository</li>
+            <li>Push to GitHub</li>
+            <li>Ensure <code>.env</code> is in <code>.gitignore</code></li>
+        </ul>
+        <div class="slide-number">4 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Phase 2: Frontend Deploy on Vercel</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Step 1: Account</h3>
+                <p>Sign up at vercel.com<br>Login with GitHub</p>
+            </div>
+            <div class="card">
+                <h3>Step 2: Deploy</h3>
+                <p>New Project → Import Repo<br>Framework: Vite</p>
+            </div>
+            <div class="card">
+                <h3>Step 3: Env Variables</h3>
+                <p>Project Settings → Environment<br>Add Supabase + EmailJS keys</p>
+            </div>
+            <div class="card">
+                <h3>Step 4: Redeploy</h3>
+                <p>Trigger new build<br>Verify deployment</p>
+            </div>
+        </div>
+        <div class="slide-number">5 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Phase 3: Domain DNS Configuration</h2>
+        <h3>Add Domain to Vercel</h3>
+        <p>Project Settings → Domains → Enter domain</p>
+        <h3>DNS Records (Cloudflare)</h3>
+        <table>
+            <tr><th>Type</th><th>Name</th><th>Content</th><th>Proxy</th></tr>
+            <tr><td>CNAME</td><td>@</td><td>cname.vercel-dns.com</td><td>DNS only</td></tr>
+            <tr><td>CNAME</td><td>www</td><td>cname.vercel-dns.com</td><td>DNS only</td></tr>
+        </table>
+        <h3>SSL Configuration</h3>
+        <p class="highlight">SSL/TLS Mode: Full (Strict)</p>
+        <div class="slide-number">6 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Phase 4: Supabase Security</h2>
+        <h3>Row Level Security (RLS)</h3>
+        <ul>
+            <li><strong>Products:</strong> Public read, Authenticated write</li>
+            <li><strong>Site Images:</strong> Public read, Authenticated write</li>
+            <li><strong>Media Reviews:</strong> Public read, Authenticated write</li>
+            <li><strong>Popup Campaigns:</strong> Public read (active only), Authenticated write</li>
+        </ul>
+        <h3>Storage Buckets</h3>
+        <ul>
+            <li>product-images, site-images, media-reviews</li>
+            <li>All public for read, authenticated for upload</li>
+        </ul>
+        <h3>Admin User</h3>
+        <p>Create in Supabase → Authentication → Users</p>
+        <div class="slide-number">7 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Phase 5: Post-Deployment Testing</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Functional Tests</h3>
+                <ul>
+                    <li>Homepage loads</li>
+                    <li>Products display</li>
+                    <li>Contact form works</li>
+                    <li>Language switch (EN/HI)</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Admin Tests</h3>
+                <ul>
+                    <li>Admin login</li>
+                    <li>Add/Edit/Delete products</li>
+                    <li>Upload images</li>
+                    <li>Manage popups</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Performance</h3>
+                <ul>
+                    <li>PageSpeed > 80</li>
+                    <li>Load time < 3s</li>
+                    <li>Mobile responsive</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Security</h3>
+                <ul>
+                    <li>HTTPS enabled</li>
+                    <li>RLS policies active</li>
+                    <li>Admin routes protected</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-number">8 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Cost Breakdown</h2>
+        <table>
+            <tr><th>Service</th><th>Plan</th><th>Monthly Cost</th></tr>
+            <tr><td>Vercel</td><td>Hobby</td><td>FREE</td></tr>
+            <tr><td>Supabase</td><td>Free</td><td>FREE</td></tr>
+            <tr><td>Cloudflare</td><td>Free</td><td>FREE</td></tr>
+            <tr><td>EmailJS</td><td>Free</td><td>FREE</td></tr>
+        </table>
+        <div class="cost-box">
+            <h2>Total: ₹0/month</h2>
+        </div>
+        <div class="slide-number">9 / 10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Future Scaling</h2>
+        <h3>When to Upgrade</h3>
+        <table>
+            <tr><th>Trigger</th><th>Upgrade</th><th>Cost</th></tr>
+            <tr><td>Traffic > 100GB/mo</td><td>Vercel Pro</td><td>$20/mo</td></tr>
+            <tr><td>Database > 500MB</td><td>Supabase Pro</td><td>$25/mo</td></tr>
+            <tr><td>Emails > 200/mo</td><td>EmailJS Growth</td><td>$10/mo</td></tr>
+        </table>
+        <div class="cost-box">
+            <h2>Pro Total: ~$55/month (~₹4,500/mo)</h2>
+        </div>
+        <h3 style="margin-top: 40px;">Quick Links</h3>
+        <p>vercel.com | supabase.com | cloudflare.com | emailjs.com</p>
+        <div class="slide-number">10 / 10</div>
+    </div>
+
+    <!-- Navigation controls -->
+    <div class="controls">
+        <button id="prev-btn" class="btn-nav">← PREV</button>
+        <button id="next-btn" class="btn-nav">NEXT →</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const progressBar = document.getElementById('progress-bar');
+            
+            let currentSlide = 0;
+            
+            function updateSlides() {
+                slides.forEach((slide, idx) => {
+                    if (idx === currentSlide) {
+                        slide.classList.add('active');
+                    } else {
+                        slide.classList.remove('active');
+                    }
+                });
+                
+                // Update controls status
+                prevBtn.disabled = (currentSlide === 0);
+                nextBtn.disabled = (currentSlide === slides.length - 1);
+                
+                if (currentSlide === slides.length - 1) {
+                    nextBtn.innerHTML = 'END ✖';
+                } else {
+                    nextBtn.innerHTML = 'NEXT →';
+                }
+                
+                // Update progress bar width
+                const percentage = ((currentSlide + 1) / slides.length) * 100;
+                progressBar.style.width = `${percentage}%`;
+            }
+            
+            prevBtn.addEventListener('click', () => {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    updateSlides();
+                }
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                if (currentSlide < slides.length - 1) {
+                    currentSlide++;
+                    updateSlides();
+                }
+            });
+            
+            // Key controls: Right Arrow/Space to Next, Left Arrow to Prev
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                    e.preventDefault();
+                    if (currentSlide < slides.length - 1) {
+                        currentSlide++;
+                        updateSlides();
+                    }
+                } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                    e.preventDefault();
+                    if (currentSlide > 0) {
+                        currentSlide--;
+                        updateSlides();
+                    }
+                }
+            });
+            
+            // Touch gestures for mobile swipes
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            document.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, false);
+            
+            document.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, false);
+            
+            function handleSwipe() {
+                const threshold = 50;
+                if (touchEndX < touchStartX - threshold) {
+                    // Swipe Left (Next)
+                    if (currentSlide < slides.length - 1) {
+                        currentSlide++;
+                        updateSlides();
+                    }
+                }
+                if (touchEndX > touchStartX + threshold) {
+                    // Swipe Right (Prev)
+                    if (currentSlide > 0) {
+                        currentSlide--;
+                        updateSlides();
+                    }
+                }
+            }
+            
+            // Initialize slide view
+            updateSlides();
+        });
+    </script>
+</body>
+</html>

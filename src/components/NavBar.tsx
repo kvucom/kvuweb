@@ -3,10 +3,11 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 const navLinks: { key: string; to: string }[] = [
-  { key: 'home',     to: '/' },
-  { key: 'products', to: '/products' },
-  { key: 'about',    to: '/about' },
-  { key: 'contact',  to: '/contact' },
+  { key: 'home',       to: '/' },
+  { key: 'products',   to: '/products' },
+  { key: 'about',      to: '/about' },
+  { key: 'dealership', to: '/dealership' },
+  { key: 'contact',    to: '/contact' },
 ]
 
 export default function NavBar() {

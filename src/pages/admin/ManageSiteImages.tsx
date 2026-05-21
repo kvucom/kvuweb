@@ -75,6 +75,26 @@ const IMAGE_SLOTS = [
     tip: 'Appears beside company story text. Upload multiple photos for a slideshow.',
     type: 'gallery',
   },
+  {
+    key: 'about-partner-1',
+    label: 'About — Managing Partner 1',
+    page: 'About Page',
+    size: '800 × 1000 px',
+    ratio: '4:5 Portrait',
+    tip: 'Portrait photo for the first managing partner.',
+    type: 'single',
+    hasNameInput: true,
+  },
+  {
+    key: 'about-partner-2',
+    label: 'About — Managing Partner 2',
+    page: 'About Page',
+    size: '800 × 1000 px',
+    ratio: '4:5 Portrait',
+    tip: 'Portrait photo for the second managing partner.',
+    type: 'single',
+    hasNameInput: true,
+  },
 ]
 
 const DEFAULTS: Record<string, string> = {
@@ -84,6 +104,10 @@ const DEFAULTS: Record<string, string> = {
   'home-cat-poultry': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fm=webp&w=800&q=80',
   'home-cat-chakki':  '/products/mobile-chakki-oil.webp',
   'about-hero':       '/backgrounds/rice-field-hero.webp',
+  'about-partner-1':  '/managing_partner_1.png',
+  'about-partner-2':  '/managing_partner_2.png',
+  'about-partner-1-name': 'Managing Partner 1',
+  'about-partner-2-name': 'Managing Partner 2',
 }
 
 interface StoryPhoto {
@@ -436,6 +460,40 @@ export default function ManageSiteImages() {
                       }}
                     />
                   </label>
+
+                  {/* Name Input for Partners */}
+                  {(slot as any).hasNameInput && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Partner Name</label>
+                      <input
+                        type="text"
+                        value={currentImages[`${slot.key}-name`] || DEFAULTS[`${slot.key}-name`]}
+                        onChange={(e) => setCurrentImages(prev => ({ ...prev, [`${slot.key}-name`]: e.target.value }))}
+                        onBlur={async (e) => {
+                          const val = e.target.value
+                          try {
+                            setUploading(`${slot.key}-name`)
+                            const { error } = await supabase
+                              .from('site_images')
+                              .upsert({ key: `${slot.key}-name`, url: val, label: 'Partner Name' }, { onConflict: 'key' })
+                            if (error) throw error
+                            setSuccess(`${slot.key}-name`)
+                            setTimeout(() => setSuccess(null), 3000)
+                          } catch (err) {
+                            console.error(err)
+                          } finally {
+                            setUploading(null)
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="E.g., John Doe"
+                      />
+                      {success === `${slot.key}-name` && (
+                        <span className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1"><CheckCircle size={12} /> Saved</span>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               </div>
             ))}

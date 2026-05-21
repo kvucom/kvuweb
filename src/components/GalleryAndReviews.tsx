@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import ScrollReveal from './ScrollReveal'
-import { Play, X } from 'lucide-react'
+import { Play, X, Star } from 'lucide-react'
 
 interface MediaItem {
   id: string
@@ -23,10 +23,10 @@ interface Review {
 }
 
 const staticMedia: MediaItem[] = [
-  { id: 's1', type: 'video', url: 'https://images.unsplash.com/photo-1565439390118-bbf3252fa975?auto=format&fm=webp&w=600&q=80', display_order: 1 },
-  { id: 's2', type: 'image', url: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fm=webp&w=600&q=80', display_order: 2 },
-  { id: 's3', type: 'image', url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fm=webp&w=600&q=80', display_order: 3 },
-  { id: 's4', type: 'video', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fm=webp&w=600&q=80', display_order: 4 },
+  { id: 's1', type: 'video', url: 'https://images.unsplash.com/photo-1565439390118-bbf3252fa975?auto=format&fm=webp&w=600&0', display_order: 1 },
+  { id: 's2', type: 'image', url: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fm=webp&w=600&0', display_order: 2 },
+  { id: 's3', type: 'image', url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fm=webp&w=600&0', display_order: 3 },
+  { id: 's4', type: 'video', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fm=webp&w=600&0', display_order: 4 },
 ]
 
 const staticReviews: Review[] = [
@@ -131,9 +131,16 @@ export default function GalleryAndReviews() {
               <div className="flex flex-col gap-6">
                 {testimonials.map((t) => (
                   <div key={t.id} className="bg-white p-8 rounded-2xl shadow-sm border border-outline-variant/30 hover:border-primary/20 hover:shadow-md transition-all">
-                    <div className="flex text-secondary-gold mb-3">
+                    <div className="flex text-secondary-gold gap-1 mb-3">
                       {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`material-symbols-outlined text-lg ${i < t.rating ? '' : 'opacity-30'}`}>star</span>
+                        <Star 
+                          key={i} 
+                          className={`w-5 h-5 ${
+                            i < t.rating 
+                              ? 'text-secondary-gold fill-secondary-gold' 
+                              : 'text-secondary-gold/20 fill-transparent'
+                          }`} 
+                        />
                       ))}
                     </div>
                     <p className="font-manrope text-on-surface-variant italic mb-5">"{t.content}"</p>

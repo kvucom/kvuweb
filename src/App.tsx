@@ -11,6 +11,7 @@ import { usePopupCampaigns } from './hooks/usePopupCampaigns'
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
+const DealershipPage = lazy(() => import('./pages/DealershipPage'))
 
 // Lazy loaded admin pages
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -91,6 +92,8 @@ export default function App() {
           <Route path="/products" element={<Suspense fallback={<LoadingSpinner />}><ProductsPage /></Suspense>} />
           <Route path="/about" element={<Suspense fallback={<LoadingSpinner />}><AboutPage /></Suspense>} />
           <Route path="/contact" element={<Suspense fallback={<LoadingSpinner />}><ContactPage /></Suspense>} />
+          <Route path="/dealership" element={<Suspense fallback={<LoadingSpinner />}><DealershipPage /></Suspense>} />
+          <Route path="/delarship" element={<Suspense fallback={<LoadingSpinner />}><DealershipPage /></Suspense>} />
           <Route path="*" element={<HomePage />} />
         </Route>
       </Routes>
