@@ -103,7 +103,7 @@ function PopupModal({ campaign, onDismiss }: CampaignBannerProps) {
       <div className="relative w-full max-w-lg animate-scale-in bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
         {campaign.image_url && (
           <div className="relative h-48 overflow-hidden">
-            <img src={campaign.image_url} alt={campaign.title} className="w-full h-full object-cover" />
+            <img src={campaign.image_url} alt={campaign.title} loading="lazy" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           </div>
         )}

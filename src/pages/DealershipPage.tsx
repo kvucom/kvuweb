@@ -20,7 +20,7 @@ import {
 // EmailJS config from env
 const EJ_PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY  || ''
 const EJ_SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID  || ''
-const EJ_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || ''
+const EJ_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_DEALER_TEMPLATE_ID || ''
 
 export default function DealershipPage() {
   const { t } = useTranslation()
@@ -29,6 +29,7 @@ export default function DealershipPage() {
   const [form, setForm] = useState({
     name: '',
     firm: '',
+    gst: '',
     phone: '',
     email: '',
     location: '',
@@ -79,6 +80,24 @@ export default function DealershipPage() {
     setLoading(true)
     setError('')
 
+    // Frontend Rate Limiting: Check localStorage for submission within last 24 hours
+    const lastSubmitStr = localStorage.getItem('dealership_last_submit')
+    if (lastSubmitStr) {
+      try {
+        const lastSubmit = JSON.parse(lastSubmitStr)
+        const diffMs = Date.now() - lastSubmit.timestamp
+        const hoursLeft = 24 - (diffMs / (1000 * 60 * 60))
+        
+        if (diffMs < 24 * 60 * 60 * 1000 && (lastSubmit.email === form.email || lastSubmit.phone === form.phone)) {
+          setError(`You have already submitted a request in the last 24 hours. Please wait another ${Math.ceil(hoursLeft)} hours or contact us directly.`)
+          setLoading(false)
+          return
+        }
+      } catch (e) {
+        console.error('Failed to parse last submit metadata:', e)
+      }
+    }
+
     const appNo = `KUV-DEALER-${Date.now().toString().slice(-6)}`
 
     // Add hidden values to form reference for EmailJS
@@ -90,16 +109,27 @@ export default function DealershipPage() {
     try {
       // 1. Try to save application to Supabase database (falls back silently if table missing/unconfigured)
       try {
-        await supabase.from('dealership_applications').insert([{
+        const { error: dbInsertErr } = await supabase.from('dealership_applications').insert([{
           name: form.name,
           email: form.email || null,
           phone: form.phone,
           business_name: form.firm,
+          gst_no: form.gst || null,
           location: form.location,
           experience: form.experience,
           message: form.message
         }])
+
+        if (dbInsertErr) {
+          if (dbInsertErr.message && dbInsertErr.message.includes('DUPLICATE_SUBMISSION')) {
+            throw new Error('DUPLICATE_SUBMISSION')
+          }
+          console.warn('Database logging warning:', dbInsertErr)
+        }
       } catch (dbErr) {
+        if ((dbErr as Error).message === 'DUPLICATE_SUBMISSION') {
+          throw new Error('You have already submitted an application in the last 24 hours with this email or phone number.', { cause: dbErr })
+        }
         console.error('Failed to log in database, continuing with Email delivery.', dbErr)
       }
 
@@ -111,10 +141,22 @@ export default function DealershipPage() {
         { publicKey: EJ_PUBLIC_KEY }
       )
 
+      // Save submission details to localStorage
+      try {
+        localStorage.setItem('dealership_last_submit', JSON.stringify({
+          timestamp: Date.now(),
+          email: form.email,
+          phone: form.phone
+        }))
+      } catch (e) {
+        console.error('Failed to save submit timestamp:', e)
+      }
+
       setSubmitted(true)
       setForm({
         name: '',
         firm: '',
+        gst: '',
         phone: '',
         email: '',
         location: '',
@@ -122,7 +164,7 @@ export default function DealershipPage() {
         message: ''
       })
     } catch (err: unknown) {
-      const errorText = (err as { text?: string })?.text
+      const errorText = (err as Error)?.message || (err as { text?: string })?.text
       setError(errorText || 'Failed to submit application. Please contact sales team directly.')
     } finally {
       setLoading(false)
@@ -381,6 +423,26 @@ export default function DealershipPage() {
                       </div>
                     </div>
 
+                    {/* GST Number (Optional) */}
+                    <div className="relative">
+                      <label className="font-grotesk text-xs uppercase tracking-widest text-on-surface-variant dark:text-gray-400 block mb-2 font-bold">
+                        {t('dealership.form.gst')}
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type="text"
+                          name="gst" 
+                          value={form.gst} 
+                          onChange={handleChange}
+                          placeholder="e.g. 09AAAAA1111A1Z1"
+                          maxLength={15}
+                          className="w-full border-b border-gray-200 dark:border-gray-800 bg-transparent py-3 font-manrope text-sm focus:outline-none focus:border-primary dark:focus:border-secondary-gold text-primary dark:text-white transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-700" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Experience */}
                     <div className="relative">
                       <label className="font-grotesk text-xs uppercase tracking-widest text-on-surface-variant dark:text-gray-400 block mb-2 font-bold">

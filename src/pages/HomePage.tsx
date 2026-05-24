@@ -6,8 +6,30 @@ import { useSiteImages } from '../hooks/useSiteImages'
 import StorySlideshow from '../components/StorySlideshow'
 import GalleryAndReviews from '../components/GalleryAndReviews'
 import AnimatedCounter from '../components/AnimatedCounter'
-import { Calendar, Users, Award, ShieldCheck, ArrowRight, Star } from 'lucide-react'
+import { Calendar, Users, Award, ShieldCheck, ArrowRight, Star, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+
+interface StandardSpec {
+  label: string;
+  value: string;
+  section_title?: never;
+  specs?: never;
+}
+
+interface ComboSpec {
+  section_title: string;
+  specs: { label: string; value: string }[];
+  label?: never;
+  value?: never;
+}
+
+type AppProductSpec = StandardSpec | ComboSpec;
+
+interface AppProductVariant {
+  variant_name: string;
+  required_hp: string;
+  equipment: string[];
+}
 
 interface AppProduct {
   id: string | number;
@@ -15,8 +37,10 @@ interface AppProduct {
   description: string;
   category: string;
   images: string[];
-  specs?: { label: string; value: string }[];
+  specs?: AppProductSpec[];
+  variants?: AppProductVariant[];
   badge?: string;
+  product_code?: string;
 }
 
 const FALLBACK_PRODUCTS: AppProduct[] = [
@@ -61,6 +85,181 @@ const FALLBACK_PRODUCTS: AppProduct[] = [
   }
 ];
 
+function FeaturedProductCard({ p, idx }: { p: AppProduct; idx: number }) {
+  const hasVariants = p.variants && Array.isArray(p.variants) && p.variants.length > 0;
+  const isCombo = p.specs && Array.isArray(p.specs) && p.specs.length > 0 && 'section_title' in p.specs[0];
+  
+  const [activeVariantIdx, setActiveVariantIdx] = useState(0);
+  const [activeImgIdx, setActiveImgIdx] = useState(0);
+  const activeVariant = hasVariants ? p.variants![activeVariantIdx] : null;
+
+  const imagesList = p.images && p.images.length > 0 ? p.images : [
+    p.category === 'rice-mill' ? '/products/trolly-rice-plant.webp' : p.category === 'poultry-feed' ? '/products/poultry-feed-plant.webp' : '/products/mobile-chakki-oil.webp'
+  ];
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveImgIdx((prev) => (prev + 1) % imagesList.length);
+  };
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveImgIdx((prev) => (prev - 1 + imagesList.length) % imagesList.length);
+  };
+
+  return (
+    <ScrollReveal delay={idx * 150} className={idx === 1 ? 'md:mt-12' : ''}>
+      <div className="group relative bg-white dark:bg-gray-900 rounded-[2.5rem] p-5 hover:shadow-2xl hover:shadow-green-950/10 hover:-translate-y-2 transition-all duration-500 border border-gray-150 dark:border-gray-800 flex flex-col h-full overflow-hidden">
+        {/* Image Container */}
+        <div className="relative h-72 rounded-[2rem] overflow-hidden bg-gray-50 dark:bg-gray-850 mb-6 flex items-center justify-center p-8 group/homeimg group-hover:scale-[1.02] transition-transform duration-500">
+          <div className="absolute inset-0 bg-gradient-to-tr from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          {/* Navigation Arrows */}
+          {imagesList.length > 1 && (
+            <>
+              <button 
+                type="button"
+                onClick={handlePrevImage}
+                className="absolute left-3 z-30 bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-900 text-gray-800 dark:text-gray-200 p-2 rounded-full shadow-md backdrop-blur-sm opacity-0 group-hover/homeimg:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button 
+                type="button"
+                onClick={handleNextImage}
+                className="absolute right-3 z-30 bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-900 text-gray-800 dark:text-gray-200 p-2 rounded-full shadow-md backdrop-blur-sm opacity-0 group-hover/homeimg:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+              >
+                <ChevronRight size={16} />
+              </button>
+              {/* Dots indicator */}
+              <div className="absolute bottom-3 z-30 flex gap-1 justify-center w-full">
+                {imagesList.map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`h-1.5 rounded-full transition-all duration-300 ${activeImgIdx === i ? 'w-4 bg-green-500' : 'w-1.5 bg-gray-300 dark:bg-gray-650'}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          <img
+            src={imagesList[activeImgIdx]}
+            alt={p.name}
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = p.category === 'rice-mill' ? '/products/trolly-rice-plant.webp' : p.category === 'poultry-feed' ? '/products/poultry-feed-plant.webp' : '/products/mobile-chakki-oil.webp';
+            }}
+            className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-md"
+          />
+          {p.badge && (
+            <div className="absolute top-4 left-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-grotesk font-black text-gray-950 dark:text-white uppercase tracking-widest border border-white/20 shadow-sm">
+              {p.badge}
+            </div>
+          )}
+        </div>
+
+        {/* Card Content */}
+        <div className="flex-grow flex flex-col px-2">
+          <h3 className="font-grotesk font-black text-2xl text-gray-900 dark:text-white mb-3 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors line-clamp-1">
+            {p.name}
+          </h3>
+          {p.product_code && (
+            <div className="mb-3">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 dark:bg-gray-805 text-gray-600 dark:text-gray-400 border border-gray-250/60 dark:border-gray-700">
+                Code: {p.product_code}
+              </span>
+            </div>
+          )}
+          <p className="font-manrope text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6 line-clamp-2">
+            {p.description}
+          </p>
+
+          {/* Specifications Summary */}
+          <div className="mt-auto mb-6">
+            {hasVariants && activeVariant ? (
+              <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-500/10 rounded-2xl p-4 space-y-3">
+                {/* Mini Tabs Selector */}
+                <div className="flex flex-wrap gap-1 bg-white/60 dark:bg-gray-950/40 p-1 rounded-xl border border-gray-150 dark:border-gray-800">
+                  {p.variants!.map((v, vIdx: number) => (
+                    <button
+                      key={vIdx}
+                      type="button"
+                      onClick={() => setActiveVariantIdx(vIdx)}
+                      className={`text-[9px] font-bold px-2 py-1 rounded-lg transition-all ${
+                        activeVariantIdx === vIdx
+                          ? 'bg-green-600 text-white shadow-sm'
+                          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-150 dark:hover:bg-gray-850'
+                      }`}
+                    >
+                      {v.variant_name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Selected Variant Data */}
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-green-700 dark:text-green-400">Required HP</span>
+                  <span className="font-black text-gray-800 dark:text-white bg-white dark:bg-gray-900 px-2 py-0.5 rounded border border-gray-150 dark:border-gray-800 shadow-sm">{activeVariant.required_hp}</span>
+                </div>
+
+                {/* Equipment List */}
+                {activeVariant.equipment && activeVariant.equipment.length > 0 && (
+                  <div className="space-y-1">
+                    {activeVariant.equipment.slice(0, 3).map((eq: string, eqIdx: number) => {
+                      const parts = eq.split(' - ');
+                      const name = parts[0];
+                      const details = parts.slice(1).join(' - ');
+                      return (
+                        <div key={eqIdx} className="flex justify-between items-center text-[10px] bg-white/40 dark:bg-gray-900/40 px-2 py-0.5 rounded border border-gray-150 dark:border-gray-800">
+                          <span className="font-bold text-gray-700 dark:text-gray-300 truncate">{name}</span>
+                          {details && (
+                            <span className="text-[9px] text-green-600 dark:text-green-400 font-extrabold ml-2 shrink-0">{details}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : isCombo ? (
+              <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-500/10 rounded-2xl p-4 flex flex-wrap gap-2">
+                {(p.specs as ComboSpec[]).slice(0, 2).map((sec, secIdx: number) => (
+                  <span key={secIdx} className="text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full uppercase tracking-wider">
+                    {sec.section_title}
+                  </span>
+                ))}
+              </div>
+            ) : p.specs && p.specs.length > 0 ? (
+              <div className="bg-gray-55 dark:bg-gray-850 border border-gray-200/50 dark:border-gray-800 rounded-2xl p-3.5 grid grid-cols-2 gap-2">
+                {(p.specs as StandardSpec[]).slice(0, 2).map((sp, spIdx: number) => (
+                  <div key={spIdx} className="truncate">
+                    <span className="text-gray-450 block text-[9px] uppercase tracking-wider font-semibold">{sp.label}</span>
+                    <span className="font-bold text-gray-800 dark:text-gray-200 text-xs">{sp.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 pt-4 border-t border-gray-150 dark:border-gray-800">
+            <Link
+              to={`/products?open=${p.id}`}
+              className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider text-center flex items-center justify-center gap-1.5 hover:bg-green-600 dark:hover:bg-green-500 hover:text-white transition-all duration-300 shadow-sm"
+            >
+              <Eye size={14} /> Quick View
+            </Link>
+          </div>
+        </div>
+      </div>
+    </ScrollReveal>
+  );
+}
+
 export default function HomePage() {
   const { t } = useTranslation()
   const { images, homeStoryPhotos, heroGallery } = useSiteImages()
@@ -69,22 +268,37 @@ export default function HomePage() {
   const [featured, setFeatured] = useState<AppProduct[]>(FALLBACK_PRODUCTS)
 
   useEffect(() => {
+    interface DbProductRow {
+      id: string | number;
+      title: string;
+      description: string;
+      category: string;
+      images: string[] | null;
+      image_url: string | null;
+      specs: AppProductSpec[] | null;
+      variants: AppProductVariant[] | null;
+      badge: string | null;
+      product_code: string | null;
+    }
+
     async function fetchFeatured() {
       try {
         const { data, error } = await supabase.from('products').select('*').limit(3)
         if (data && !error && data.length > 0) {
-          const mapped = data.map((p: any) => ({
+          const mapped = data.map((p: DbProductRow) => ({
             id: p.id,
             name: p.title,
             description: p.description,
             category: p.category,
-            images: [p.image_url],
+            images: p.images && Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image_url ? [p.image_url] : []),
             specs: p.specs || [],
+            variants: p.variants || [],
             badge: p.badge || undefined,
+            product_code: p.product_code || undefined,
           }))
           setFeatured(mapped)
         }
-      } catch (err) {
+      } catch {
         // Handled, keeps fallback
       }
     }
@@ -290,18 +504,18 @@ export default function HomePage() {
       </section>
 
       {/* ── Featured Products - Premium Cards ─────────────────── */}
-      <section className="py-32 bg-white relative">
+      <section className="py-32 bg-white dark:bg-gray-950 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16">
             <ScrollReveal>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 text-primary mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 mb-4 border border-green-500/10">
                 <Star className="w-3 h-3 text-secondary-gold fill-secondary-gold" />
-                <span className="font-grotesk text-xs uppercase tracking-widest font-bold">{t('home.products.badge')}</span>
+                <span className="font-grotesk text-xs uppercase tracking-widest font-black">{t('home.products.badge')}</span>
               </div>
-              <h2 className="font-grotesk font-bold text-4xl md:text-5xl text-primary">{t('home.products.title')}</h2>
+              <h2 className="font-grotesk font-black text-4xl md:text-5xl text-gray-900 dark:text-white leading-tight">{t('home.products.title')}</h2>
             </ScrollReveal>
             <ScrollReveal delay={100}>
-              <Link to="/products" className="group hidden md:flex items-center gap-3 text-primary font-grotesk font-bold uppercase tracking-widest hover:text-secondary-gold-dim transition-colors">
+              <Link to="/products" className="group hidden md:flex items-center gap-3 text-green-700 dark:text-green-400 font-grotesk font-black uppercase tracking-widest hover:text-green-600 transition-colors">
                 {t('home.products.viewAll')}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -310,35 +524,12 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 xl:gap-12">
             {featured.map((p, i) => (
-              <ScrollReveal key={p.id} delay={i * 150} className={i === 1 ? 'md:mt-12' : ''}>
-                <div className="group bg-surface rounded-[2rem] p-4 hover:bg-white hover:shadow-[0_20px_40px_-15px_rgba(0,46,28,0.1)] transition-all duration-500 border border-transparent hover:border-primary/5">
-                  <div className="relative h-72 rounded-3xl overflow-hidden bg-surface-low mb-6 flex items-center justify-center p-8 group-hover:shadow-inner transition-all">
-                    <img
-                      src={p.images?.[0] || `https://images.unsplash.com/photo-${i === 0 ? '1625246333195-78d9c38ad449' : i === 1 ? '1558618666-fcd25c85cd64' : '1574943320219-553eb213f72d'}?auto=format&fm=webp&w=600&q=80`}
-                      alt={p.name}
-                      className="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-out"
-                    />
-                    <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-grotesk font-bold text-primary uppercase tracking-widest border border-white shadow-sm">
-                      {p.badge}
-                    </div>
-                  </div>
-                  <div className="px-4 pb-4">
-                    <h3 className="font-grotesk font-bold text-2xl text-primary mb-3 line-clamp-1 group-hover:text-secondary-gold-dim transition-colors">{p.name}</h3>
-                    <p className="font-manrope text-on-surface-variant/80 mb-6 line-clamp-2 text-sm">{p.description}</p>
-                    <div className="flex items-center justify-between pt-4 border-t border-primary/5">
-                      <Link to={`/products`} className="text-primary font-grotesk text-xs uppercase tracking-widest font-bold group/link flex items-center gap-2 hover:text-secondary-gold-dim transition-colors">
-                        {t('products.viewDetails')}
-                        <ArrowRight className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </ScrollReveal>
+              <FeaturedProductCard key={p.id} p={p} idx={i} />
             ))}
           </div>
           
           <div className="mt-12 text-center md:hidden">
-             <Link to="/products" className="inline-flex items-center gap-3 text-primary font-grotesk font-bold uppercase tracking-widest border-b-2 border-primary pb-1">
+             <Link to="/products" className="inline-flex items-center gap-3 text-green-700 dark:text-green-400 font-grotesk font-black uppercase tracking-widest border-b-2 border-green-500 pb-1">
                 {t('home.products.viewAll')}
                 <ArrowRight className="w-5 h-5" />
               </Link>

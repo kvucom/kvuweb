@@ -20,8 +20,8 @@ const DEFAULTS: SiteImages = {
   'home-cat-chakki':  '/products/mobile-chakki-oil.webp',
   'about-hero':       '/backgrounds/rice-field-hero.webp',
   'about-story':      '/backgrounds/industrial-story.webp',
-  'about-partner-1':  '/managing_partner_1.png',
-  'about-partner-2':  '/managing_partner_2.png',
+  'about-partner-1':  '/managing_partner_1.webp',
+  'about-partner-2':  '/managing_partner_2.webp',
 }
 
 export function useSiteImages() {
@@ -34,39 +34,29 @@ export function useSiteImages() {
   useEffect(() => {
     async function fetchAll() {
       try {
-        // Fetch single-image site settings
-        const { data: siteData } = await supabase.from('site_images').select('key, url')
+        const [
+          { data: siteData },
+          { data: homePhotos },
+          { data: aboutPhotos },
+          { data: heroData },
+        ] = await Promise.all([
+          supabase.from('site_images').select('key, url'),
+          supabase.from('story_photos').select('url').eq('page', 'home').order('display_order', { ascending: true }),
+          supabase.from('story_photos').select('url').eq('page', 'about').order('display_order', { ascending: true }),
+          supabase.from('hero_gallery').select('*').order('display_order', { ascending: true }),
+        ])
+
         if (siteData && siteData.length > 0) {
           const map: SiteImages = { ...DEFAULTS }
           siteData.forEach((row: { key: string; url: string }) => { map[row.key] = row.url })
           setImages(map)
         }
-
-        // Fetch home story gallery
-        const { data: homePhotos } = await supabase
-          .from('story_photos')
-          .select('url')
-          .eq('page', 'home')
-          .order('display_order', { ascending: true })
         if (homePhotos && homePhotos.length > 0) {
           setHomeStoryPhotos(homePhotos.map((r: { url: string }) => r.url))
         }
-
-        // Fetch about story gallery
-        const { data: aboutPhotos } = await supabase
-          .from('story_photos')
-          .select('url')
-          .eq('page', 'about')
-          .order('display_order', { ascending: true })
         if (aboutPhotos && aboutPhotos.length > 0) {
           setAboutStoryPhotos(aboutPhotos.map((r: { url: string }) => r.url))
         }
-
-        // Fetch hero gallery (images, videos, GIFs)
-        const { data: heroData } = await supabase
-          .from('hero_gallery')
-          .select('*')
-          .order('display_order', { ascending: true })
         if (heroData && heroData.length > 0) {
           setHeroGallery(heroData)
         }

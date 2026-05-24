@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Upload, X, Loader2, Plus, Trash2, LayoutGrid, Layers, Columns } from 'lucide-react';
+import { Upload, X, Loader2, Plus, Trash2, LayoutGrid, Layers, Columns, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 type CategoryKey = 'rice-mill' | 'poultry-feed' | 'atta-chakki';
@@ -49,12 +50,49 @@ const EQUIPMENT_OPTIONS = [
   'CUSTOM'
 ];
 
+const parseEquipmentString = (str: string) => {
+  const prefixes = [
+    'FEED GRINDER',
+    'FEED MIXER',
+    'SCREW CONVEOR',
+    'SCREW CONVEYOR',
+    'BUCKET ELEVETOR',
+    'BUCKET ELEVATOR',
+    'BATCH BIN'
+  ];
+  
+  const upperStr = str.toUpperCase().trim();
+  for (const prefix of prefixes) {
+    if (upperStr.startsWith(prefix)) {
+      let rest = str.substring(prefix.length).trim();
+      if (rest.startsWith('-') || rest.startsWith(':')) {
+        rest = rest.substring(1).trim();
+      }
+      let normalizedPrefix = prefix;
+      if (prefix === 'SCREW CONVEYOR') normalizedPrefix = 'SCREW CONVEOR';
+      if (prefix === 'BUCKET ELEVATOR') normalizedPrefix = 'BUCKET ELEVETOR';
+      return { type: normalizedPrefix, details: rest };
+    }
+  }
+  return { type: 'CUSTOM', details: str };
+};
 
 const buildEquipmentString = (type: string, details: string) => {
   if (type === 'CUSTOM') return details.trim();
   if (!details.trim()) return type;
   return `${type} - ${details.trim()}`;
 };
+
+interface ComboSection {
+  title: string;
+  specs: { label: string; value: string }[];
+}
+
+interface ProductVariant {
+  variant_name: string;
+  required_hp: string;
+  equipment: { type: string; details: string }[];
+}
 
 const compressAndConvertToWebp = (file: File, maxWidth = 1200, quality = 0.8): Promise<File> => {
   return new Promise((resolve) => {
@@ -111,33 +149,26 @@ const compressAndConvertToWebp = (file: File, maxWidth = 1200, quality = 0.8): P
   });
 };
 
-interface ComboSection {
-  title: string;
-  specs: { label: string; value: string }[];
-}
-
-interface ProductVariant {
-  variant_name: string;
-  required_hp: string;
-  equipment: { type: string; details: string }[];
-}
-
 interface ImageItem {
   key: string;
   url: string;
   file?: File;
 }
 
+export default function EditProduct() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
-export default function AddProduct() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<CategoryKey | ''>('');
   const [description, setDescription] = useState('');
   const [badge, setBadge] = useState('');
-  const [productCode, setProductCode] = useState('KVU');
+  const [productCode, setProductCode] = useState('');
   const [mediaItems, setMediaItems] = useState<ImageItem[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   
   // Layout mode
@@ -147,24 +178,96 @@ export default function AddProduct() {
   const [standardSpecs, setStandardSpecs] = useState<Record<string, string>>({});
 
   // Specs state for combo (multi-section) mode
-  const [comboSections, setComboSections] = useState<ComboSection[]>([
-    { title: 'ATTA CHAKKI', specs: [{ label: 'Size', value: '' }, { label: 'Capacity', value: '' }, { label: 'Required HP', value: '' }] },
-    { title: 'OIL EXPELLER', specs: [{ label: 'No of Patti', value: '' }, { label: 'Capacity', value: '' }, { label: 'Required HP', value: '' }] }
-  ]);
+  const [comboSections, setComboSections] = useState<ComboSection[]>([]);
 
   // Variants state for tabbed variants mode
-  const [variantsList, setVariantsList] = useState<ProductVariant[]>([
-    {
-      variant_name: '0.75 TO 1 TON/Hr',
-      required_hp: '14 HP',
-      equipment: [
-        { type: 'FEED GRINDER', details: 'SINGEL SCREEN' },
-        { type: 'FEED MIXER', details: '3x3(250-300KGS)' },
-        { type: 'SCREW CONVEOR', details: '8x8' },
-        { type: 'SCREW CONVEOR', details: '8x10' }
-      ]
-    }
-  ]);
+  const [variantsList, setVariantsList] = useState<ProductVariant[]>([]);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setTitle(data.title || '');
+          setCategory(data.category as CategoryKey || '');
+          setDescription(data.description || '');
+          setBadge(data.badge || '');
+          setProductCode(data.product_code || 'KVU');
+          let loadedImages: string[] = [];
+          if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+            loadedImages = data.images;
+          } else if (data.image_url) {
+            loadedImages = [data.image_url];
+          }
+          setMediaItems(loadedImages.map((url: string) => ({ key: url, url })));
+
+          interface DbVariant {
+            variant_name?: string;
+            required_hp?: string;
+            equipment?: string[];
+          }
+
+          interface DbSpec {
+            label: string;
+            value: string;
+            section_title?: string;
+            specs?: { label: string; value: string }[];
+          }
+
+          // Detect layout mode and pre-fill spec states
+          const variantsDb = (data.variants || []) as DbVariant[];
+          const specsDb = (data.specs || []) as DbSpec[];
+
+          if (variantsDb && Array.isArray(variantsDb) && variantsDb.length > 0) {
+            setLayoutMode('variants');
+            setVariantsList(variantsDb.map((v) => ({
+              variant_name: v.variant_name || '',
+              required_hp: v.required_hp || '',
+              equipment: Array.isArray(v.equipment) 
+                ? v.equipment.map((eStr: string) => parseEquipmentString(eStr)) 
+                : []
+            })));
+          } else if (specsDb && Array.isArray(specsDb) && specsDb.length > 0 && 'section_title' in specsDb[0]) {
+            setLayoutMode('combo');
+            setComboSections(specsDb.map((s) => ({
+              title: s.section_title || '',
+              specs: Array.isArray(s.specs) ? s.specs : []
+            })));
+          } else {
+            setLayoutMode('standard');
+            // Reconstruct standard specs key-value map
+            const fields = categorySpecFields[data.category as CategoryKey] || [];
+            const tempSpecs: Record<string, string> = {};
+            specsDb.forEach((s) => {
+              const matchedField = fields.find(f => f.label === s.label);
+              if (matchedField) {
+                tempSpecs[matchedField.key] = s.value;
+              } else {
+                tempSpecs[s.label] = s.value;
+              }
+            });
+            setStandardSpecs(tempSpecs);
+          }
+        }
+      } catch (err: unknown) {
+        console.error('Error loading product:', err);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        setMessage({ type: 'error', text: `Failed to load product details: ${errMsg}` });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
 
   const handleCategoryChange = (val: CategoryKey | '') => {
     setCategory(val);
@@ -305,11 +408,10 @@ export default function AddProduct() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setMessage({ type: '', text: '' });
 
     try {
-      let imageUrl = '';
       const uploadedUrls: string[] = [];
 
       if (mediaItems.length > 0) {
@@ -335,10 +437,11 @@ export default function AddProduct() {
             uploadedUrls.push(item.url);
           }
         }
-        imageUrl = uploadedUrls[0] || '';
       }
 
-      // Prepare data based on layoutMode
+      const imageUrl = uploadedUrls[0] || '';
+
+      // Prepare specs/variants data based on layoutMode
       let specsDb: unknown[] = [];
       let variantsDb: unknown[] = [];
 
@@ -349,7 +452,6 @@ export default function AddProduct() {
               .map(f => ({ label: f.label, value: standardSpecs[f.key].trim() }))
           : [];
       } else if (layoutMode === 'combo') {
-        // Filter out empty sections or empty specs
         specsDb = comboSections
           .filter(s => s.title.trim())
           .map(s => ({
@@ -357,7 +459,6 @@ export default function AddProduct() {
             specs: s.specs.filter(sp => sp.label.trim() && sp.value.trim())
           }));
       } else if (layoutMode === 'variants') {
-        // Prepare variants JSON
         variantsDb = variantsList
           .filter(v => v.variant_name.trim())
           .map(v => ({
@@ -371,7 +472,7 @@ export default function AddProduct() {
 
       const { error: dbError } = await supabase
         .from('products')
-        .insert([{
+        .update({
           title,
           category,
           description,
@@ -381,29 +482,15 @@ export default function AddProduct() {
           product_code: productCode || null,
           specs: specsDb,
           variants: variantsDb
-        }]);
+        })
+        .eq('id', id);
 
       if (dbError) throw dbError;
 
-      setMessage({ type: 'success', text: 'Product added successfully!' });
-      setTitle(''); setCategory(''); setDescription(''); setBadge(''); setProductCode('KVU');
-      setMediaItems([]); setStandardSpecs({});
-      setComboSections([
-        { title: 'ATTA CHAKKI', specs: [{ label: 'Size', value: '' }, { label: 'Capacity', value: '' }, { label: 'Required HP', value: '' }] },
-        { title: 'OIL EXPELLER', specs: [{ label: 'No of Patti', value: '' }, { label: 'Capacity', value: '' }, { label: 'Required HP', value: '' }] }
-      ]);
-      setVariantsList([
-        {
-          variant_name: '0.75 TO 1 TON/Hr',
-          required_hp: '14 HP',
-          equipment: [
-            { type: 'FEED GRINDER', details: 'SINGEL SCREEN' },
-            { type: 'FEED MIXER', details: '3x3(250-300KGS)' },
-            { type: 'SCREW CONVEOR', details: '8x8' },
-            { type: 'SCREW CONVEOR', details: '8x10' }
-          ]
-        }
-      ]);
+      setMessage({ type: 'success', text: 'Product updated successfully! Redirecting...' });
+      setTimeout(() => {
+        navigate('/admin/products');
+      }, 1500);
     } catch (error: unknown) {
       let errMsg = 'An unknown error occurred';
       if (error && typeof error === 'object' && error !== null) {
@@ -417,10 +504,10 @@ export default function AddProduct() {
       if (errMsg.includes('exceeded the maximum allowed size') || errMsg.includes('Payload Too Large')) {
         errMsg = 'The selected image is too large. Please resize the image or select a file under 5MB.';
       }
-      
+
       setMessage({ type: 'error', text: errMsg });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -439,12 +526,28 @@ export default function AddProduct() {
 
   const currentFields = category ? categorySpecFields[category] : [];
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-24 min-h-[50vh]">
+        <Loader2 className="animate-spin text-green-600" size={40} />
+      </div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto pb-12">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Add New Product</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Create single models, combination plants, or products with multiple capacity variants.</p>
+      <div className="flex items-center space-x-3 mb-6">
+        <button onClick={() => navigate('/admin/products')}
+          className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors">
+          <ArrowLeft size={18} />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Product</h1>
+          <p className="text-sm text-gray-500">Modify properties, layouts, and specifications of this product.</p>
+        </div>
+      </div>
 
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8">
         {message.text && (
           <div className={`p-4 rounded-xl mb-6 text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'}`}>
             {message.text}
@@ -734,14 +837,14 @@ export default function AddProduct() {
                 <input type="file" className="sr-only" accept="image/*" multiple onChange={handleImageChange} />
               </label>
             </div>
-            <p className="text-xs text-gray-500 mt-2">Upload multiple product images. PNG, JPG, WEBP up to 5MB each.</p>
+            <p className="text-xs text-gray-500 mt-2">Manage product images. Upload multiple files. PNG, JPG, WEBP up to 5MB each.</p>
           </div>
 
           {/* Submit */}
           <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={saving}
               className="w-full flex justify-center items-center py-3 px-4 rounded-xl text-sm font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-70 transition-colors shadow-sm">
-              {loading ? <><Loader2 className="animate-spin mr-2" size={20} /> Saving Product...</> : 'Add Product'}
+              {saving ? <><Loader2 className="animate-spin mr-2" size={20} /> Saving Changes...</> : 'Save Changes'}
             </button>
           </div>
         </form>

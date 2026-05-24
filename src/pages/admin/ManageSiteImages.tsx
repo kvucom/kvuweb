@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Upload, CheckCircle, Loader2, Trash2, Play, Image, Film } from 'lucide-react'
+import { compressImage } from '../../lib/imageUtils'
 
-const IMAGE_SLOTS = [
+interface ImageSlot {
+  key: string;
+  label: string;
+  page: string;
+  size: string;
+  ratio: string;
+  tip: string;
+  type: string;
+  hasNameInput?: boolean;
+}
+
+const IMAGE_SLOTS: ImageSlot[] = [
   {
     key: 'home-hero',
     label: 'Home — Hero Background',
@@ -104,8 +116,8 @@ const DEFAULTS: Record<string, string> = {
   'home-cat-poultry': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fm=webp&w=800&q=80',
   'home-cat-chakki':  '/products/mobile-chakki-oil.webp',
   'about-hero':       '/backgrounds/rice-field-hero.webp',
-  'about-partner-1':  '/managing_partner_1.png',
-  'about-partner-2':  '/managing_partner_2.png',
+  'about-partner-1':  '/managing_partner_1.webp',
+  'about-partner-2':  '/managing_partner_2.webp',
   'about-partner-1-name': 'Managing Partner 1',
   'about-partner-2-name': 'Managing Partner 2',
 }
@@ -182,10 +194,10 @@ export default function ManageSiteImages() {
     setUploading(slotKey)
     setSuccess(null)
     try {
-      const ext = file.name.split('.').pop()
-      const path = makeUniquePath('site', slotKey, ext)
+      const compressedFile = await compressImage(file)
+      const path = makeUniquePath('site', slotKey, 'webp')
 
-      const { error: upErr } = await supabase.storage.from('images').upload(path, file, { upsert: true })
+      const { error: upErr } = await supabase.storage.from('images').upload(path, compressedFile, { upsert: true })
       if (upErr) throw upErr
 
       const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
@@ -217,10 +229,10 @@ export default function ManageSiteImages() {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        const ext = file.name.split('.').pop()
-        const path = makeUniquePath('story', `${page}`, ext, i)
+        const compressedFile = await compressImage(file)
+        const path = makeUniquePath('story', `${page}`, 'webp', i)
 
-        const { error: upErr } = await supabase.storage.from('images').upload(path, file)
+        const { error: upErr } = await supabase.storage.from('images').upload(path, compressedFile)
         if (upErr) throw upErr
 
         const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
@@ -265,11 +277,13 @@ export default function ManageSiteImages() {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        const ext = file.name.split('.').pop()
+        const isImage = file.type.startsWith('image/')
+        const compressedFile = isImage ? await compressImage(file) : file
+        const ext = isImage ? 'webp' : (file.name.split('.').pop() || 'mp4')
         const mediaType = getMediaType(file.name)
         const path = makeUniquePath('hero', 'background', ext, i)
 
-        const { error: upErr } = await supabase.storage.from('images').upload(path, file)
+        const { error: upErr } = await supabase.storage.from('images').upload(path, compressedFile)
         if (upErr) throw upErr
 
         const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
@@ -462,7 +476,7 @@ export default function ManageSiteImages() {
                   </label>
 
                   {/* Name Input for Partners */}
-                  {(slot as any).hasNameInput && (
+                  {slot.hasNameInput && (
                     <div className="mt-3">
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Partner Name</label>
                       <input

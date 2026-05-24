@@ -23,10 +23,8 @@ export default function NavBar() {
   }, [])
 
   useEffect(() => {
-    if (menuOpen) {
-      setMenuOpen(false)
-    }
-  }, [location])
+    setMenuOpen(false)
+  }, [location.pathname])
 
   return (
     <nav

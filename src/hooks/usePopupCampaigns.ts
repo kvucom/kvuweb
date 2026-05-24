@@ -24,6 +24,17 @@ export function usePopupCampaigns() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const CACHE_KEY = 'kuv_popup_campaigns'
+
+    const cached = sessionStorage.getItem(CACHE_KEY)
+    if (cached) {
+      try {
+        setActiveCampaigns(JSON.parse(cached))
+        setLoading(false)
+        return
+      } catch { /* ignore */ }
+    }
+
     async function fetchCampaigns() {
       try {
         const now = new Date().toISOString()
@@ -35,7 +46,9 @@ export function usePopupCampaigns() {
           .or(`end_date.is.null,end_date.gte.${now}`)
           .order('priority', { ascending: false })
 
-        setActiveCampaigns(data || [])
+        const campaigns = data || []
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(campaigns))
+        setActiveCampaigns(campaigns)
       } catch {
         setActiveCampaigns([])
       } finally {
@@ -44,19 +57,6 @@ export function usePopupCampaigns() {
     }
 
     fetchCampaigns()
-
-    const channel = supabase
-      .channel('popup_campaigns_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'popup_campaigns' },
-        () => fetchCampaigns()
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
   }, [])
 
   return { activeCampaigns, loading }

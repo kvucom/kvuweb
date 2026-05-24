@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { motion } from 'framer-motion'
 import { Plus, Trash2, ToggleLeft, ToggleRight, Loader2, Upload, X, Eye, Copy, Calendar, Clock } from 'lucide-react'
+import { compressImage } from '../../lib/imageUtils'
 
 interface Campaign {
   id: string
@@ -28,6 +29,20 @@ const typeOptions = [
   { value: 'campaign', label: 'Campaign', color: 'amber' },
   { value: 'alert', label: 'Alert', color: 'red' },
 ]
+
+const typeButtonClasses: Record<string, string> = {
+  notice: 'bg-blue-600 text-white border-blue-600',
+  offer: 'bg-green-600 text-white border-green-600',
+  campaign: 'bg-amber-600 text-white border-amber-600',
+  alert: 'bg-red-600 text-white border-red-600',
+}
+
+const typeBadgeClasses: Record<string, string> = {
+  notice: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  offer: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  campaign: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  alert: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+}
 
 const modeOptions = [
   { value: 'popup', label: 'Popup Modal', icon: '🪟' },
@@ -63,24 +78,24 @@ export default function ManagePopups() {
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
 
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase.from('popup_campaigns').select('*').order('priority', { ascending: false })
     setCampaigns(data || [])
     setLoading(false)
-  }
+  }, [])
 
   useEffect(() => {
     fetchCampaigns()
-  }, [])
+  }, [fetchCampaigns])
 
   const handleImageUpload = async () => {
     if (!file) return form.image_url || ''
     setUploading(true)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `campaigns/${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('images').upload(path, file)
+      const compressedFile = await compressImage(file)
+      const path = `campaigns/${Date.now()}.webp`
+      const { error } = await supabase.storage.from('images').upload(path, compressedFile)
       if (error) throw error
       const { data } = supabase.storage.from('images').getPublicUrl(path)
       return data.publicUrl
@@ -147,7 +162,7 @@ export default function ManagePopups() {
   }
 
   const handleDuplicate = async (campaign: Campaign) => {
-    const { id, created_at, ...rest } = campaign
+    const { id: _id, created_at: _created_at, ...rest } = campaign
     const { error } = await supabase.from('popup_campaigns').insert([{ ...rest, title: `${campaign.title} (Copy)`, is_active: false }])
     if (!error) fetchCampaigns()
   }
@@ -232,7 +247,7 @@ export default function ManagePopups() {
                 <div className="grid grid-cols-4 gap-2">
                   {typeOptions.map(t => (
                     <button key={t.value} type="button" onClick={() => setForm(f => ({ ...f, type: t.value as Campaign['type'] }))}
-                      className={`py-2 rounded-lg text-sm font-medium border transition-all ${form.type === t.value ? `bg-${t.color}-600 text-white border-${t.color}-600` : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}>
+                      className={`py-2 rounded-lg text-sm font-medium border transition-all ${form.type === t.value ? typeButtonClasses[t.value] : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}>
                       {t.label}
                     </button>
                   ))}
@@ -369,7 +384,7 @@ export default function ManagePopups() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-${typeConf?.color}-100 text-${typeConf?.color}-700 dark:bg-${typeConf?.color}-900/30 dark:text-${typeConf?.color}-400`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${typeConf ? typeBadgeClasses[typeConf.value] : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'}`}>
                       {c.type}
                     </span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">

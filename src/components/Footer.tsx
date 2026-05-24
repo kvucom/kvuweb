@@ -111,7 +111,7 @@ export default function Footer() {
             Designed & Developed by{' '}
             <span
               className="text-secondary-gold hover:text-white transition-colors duration-300"
-              style={{ fontFamily: "'Bastliga One', sans-serif", fontSize: '1.6rem', fontWeight: 'normal' }}
+              style={{ fontFamily: "'Space Grotesk', 'Georgia', serif", fontSize: '1.6rem', fontWeight: '700' }}
             >
               Safwan Raza
             </span>

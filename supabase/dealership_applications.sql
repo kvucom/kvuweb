@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS dealership_applications (
   email TEXT,
   phone TEXT NOT NULL,
   business_name TEXT,
+  gst_no TEXT,
   location TEXT NOT NULL,
   experience TEXT,
   message TEXT,

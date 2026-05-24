@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Trash2, Edit, Plus, Loader2 } from 'lucide-react';
+import { Trash2, Edit, Plus, Loader2, Copy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Product {
@@ -9,6 +9,7 @@ interface Product {
   description: string;
   image_url: string;
   category: string;
+  product_code?: string;
 }
 
 export default function ManageProducts() {
@@ -57,6 +58,29 @@ export default function ManageProducts() {
       setProducts(products.filter(p => p.id !== id));
     } catch (error) {
       console.error('Error deleting product:', error);
+    }
+  };
+
+  const handleDuplicate = async (id: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      if (!data) return;
+
+      const { id: _id, created_at: _created_at, ...rest } = data;
+      const { error: insertError } = await supabase
+        .from('products')
+        .insert([{ ...rest, title: `${data.title} (Copy)` }]);
+
+      if (insertError) throw insertError;
+      fetchProducts();
+    } catch (error) {
+      console.error('Error duplicating product:', error);
     }
   };
 
@@ -114,7 +138,14 @@ export default function ManageProducts() {
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-white">{product.title}</div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-gray-900 dark:text-white">{product.title}</span>
+                            {product.product_code && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-250/60 dark:border-gray-700">
+                                {product.product_code}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-sm text-gray-500 truncate max-w-xs">{product.description}</div>
                         </div>
                       </div>
@@ -126,8 +157,18 @@ export default function ManageProducts() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1">
+                        <Link 
+                          to={`/admin/products/edit/${product.id}`}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 inline-block"
+                        >
                           <Edit size={18} />
+                        </Link>
+                        <button 
+                          onClick={() => handleDuplicate(product.id)}
+                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1"
+                          title="Duplicate"
+                        >
+                          <Copy size={18} />
                         </button>
                         <button 
                           onClick={() => handleDelete(product.id, product.image_url)}

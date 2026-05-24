@@ -38,7 +38,7 @@ export default function StorySlideshow({ images, interval = 4000, className = ''
       </AnimatePresence>
 
       {/* Invisible spacer to maintain aspect ratio - matches the img */}
-      <img src={images[0]} alt="" className="w-full h-full object-cover opacity-0 pointer-events-none" aria-hidden />
+      <img src={images[0]} alt="" loading="lazy" className="w-full h-full object-cover opacity-0 pointer-events-none" aria-hidden />
 
       {/* Dot indicators */}
       {images.length > 1 && (

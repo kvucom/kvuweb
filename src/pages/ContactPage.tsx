@@ -1,17 +1,35 @@
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import emailjs from '@emailjs/browser'
 import ScrollReveal from '../components/ScrollReveal'
 
 // EmailJS config from env (keys never hardcoded in source)
 const EJ_PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY  || ''
 const EJ_SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID  || ''
-const EJ_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || ''
+const EJ_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_CONTACT_TEMPLATE_ID || ''
 
 export default function ContactPage() {
   const { t } = useTranslation()
+  const [searchParams] = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '', product: '' })
+
+  const productName = searchParams.get('product_name') || ''
+  const variantName = searchParams.get('variant') || ''
+  const hp = searchParams.get('hp') || ''
+  const initialProduct = searchParams.get('product') || ''
+
+  const defaultMessage = productName 
+    ? `Hello, I am interested in ${productName}${variantName ? ` (Variant: ${variantName}${hp ? `, Required HP: ${hp}` : ''})` : ''}. Please provide a quote and details.`
+    : ''
+
+  const [form, setForm] = useState({ 
+    name: '', 
+    email: '', 
+    phone: '', 
+    message: defaultMessage, 
+    product: initialProduct === 'rice-mill' || initialProduct === 'poultry-feed' || initialProduct === 'atta-chakki' ? initialProduct : '' 
+  })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -33,6 +51,24 @@ export default function ContactPage() {
     setLoading(true)
     setError('')
 
+    // Frontend Rate Limiting: Check localStorage for submission within last 24 hours
+    const lastSubmitStr = localStorage.getItem('contact_last_submit')
+    if (lastSubmitStr) {
+      try {
+        const lastSubmit = JSON.parse(lastSubmitStr)
+        const diffMs = Date.now() - lastSubmit.timestamp
+        const hoursLeft = 24 - (diffMs / (1000 * 60 * 60))
+        
+        if (diffMs < 24 * 60 * 60 * 1000 && (lastSubmit.email === form.email || lastSubmit.phone === form.phone)) {
+          setError(`You have already submitted an inquiry in the last 24 hours. Please wait another ${Math.ceil(hoursLeft)} hours or call us directly.`)
+          setLoading(false)
+          return
+        }
+      } catch (err) {
+        console.error('Failed to parse last submit metadata:', err)
+      }
+    }
+
     // Generate unique inquiry number
     const inquiryNo = `KVU-${Date.now().toString().slice(-6)}`
 
@@ -49,6 +85,18 @@ export default function ContactPage() {
         formRef.current!,
         { publicKey: EJ_PUBLIC_KEY }
       )
+
+      // Save submission details to localStorage
+      try {
+        localStorage.setItem('contact_last_submit', JSON.stringify({
+          timestamp: Date.now(),
+          email: form.email,
+          phone: form.phone
+        }))
+      } catch (err) {
+        console.error('Failed to save submit timestamp:', err)
+      }
+
       setSubmitted(true)
       setForm({ name: '', email: '', phone: '', message: '', product: '' })
     } catch (err: unknown) {
@@ -163,6 +211,7 @@ export default function ContactPage() {
                       <option value="">{t('contact.form.productPH')}</option>
                       <option value="rice-mill">{t('home.categories.riceMill.title')}</option>
                       <option value="poultry-feed">{t('home.categories.poultry.title')}</option>
+                      <option value="atta-chakki">Atta Chakki & Oil Expeller</option>
                       <option value="other">Other / Custom Requirement</option>
                     </select>
                   </div>
@@ -180,7 +229,7 @@ export default function ContactPage() {
                     {loading ? 'Sending...' : t('contact.form.submit')}
                   </button>
                   <p className="font-manrope text-xs text-outline text-center">
-                    {t('contact.form.immediate')} <a href="tel:+91 9415139837,+91 9415139838" className="text-primary hover:underline">+91 9415139837,+91 9415139838</a>
+                    {t('contact.form.immediate')} <a href="tel:+919415139838" className="text-primary hover:underline">+91 9415139838</a> / <a href="tel:+919415139837" className="text-primary hover:underline">+91 9415139837</a>
                   </p>
                 </form>
               )}

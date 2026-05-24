@@ -52,16 +52,14 @@ interface AnimatedCounterProps {
 
 export default function AnimatedCounter({ value, duration = 2000, delay = 0 }: AnimatedCounterProps) {
   const { ref, isInView } = useInView()
-  const [displayValue, setDisplayValue] = useState('0')
+  const isStatic = !value.match(/^([\d.]+)/)
+  const [displayValue, setDisplayValue] = useState(isStatic ? value : '0')
 
   useEffect(() => {
-    if (!isInView) return
+    if (!isInView || isStatic) return
 
     const numMatch = value.match(/^([\d.]+)/)
-    if (!numMatch) {
-      setDisplayValue(value)
-      return
-    }
+    if (!numMatch) return
 
     const target = parseFloat(numMatch[1])
     const suffix = value.replace(numMatch[1], '')
@@ -88,7 +86,7 @@ export default function AnimatedCounter({ value, duration = 2000, delay = 0 }: A
     }
 
     requestAnimationFrame(animate)
-  }, [isInView, value, duration, delay])
+  }, [isInView, value, duration, delay, isStatic])
 
   return (
     <span ref={ref} className="tabular-nums">

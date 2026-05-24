@@ -65,18 +65,18 @@ export default function AboutPage() {
                 <div className="relative flex flex-row items-end gap-3 sm:gap-6 justify-center">
                   {/* Photo 1 */}
                   <div className="w-[48%] aspect-[4/5] overflow-hidden border-4 border-white shadow-xl bg-surface-low">
-                    <img src={images['about-partner-1']} alt="Managing Partner 1" className="w-full h-full object-cover" />
+                    <img src={images['about-partner-1']} alt="Managing Partner 1" loading="lazy" className="w-full h-full object-cover" />
                   </div>
                   
                   {/* Photo 2 */}
                   <div className="w-[48%] aspect-[4/5] overflow-hidden border-4 border-white shadow-xl bg-surface-low">
-                    <img src={images['about-partner-2']} alt="Managing Partner 2" className="w-full h-full object-cover" />
+                    <img src={images['about-partner-2']} alt="Managing Partner 2" loading="lazy" className="w-full h-full object-cover" />
                   </div>
 
                   {/* The 40+ Years Box - Now absolutely positioned relative to ONLY the images */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-secondary-gold p-4 sm:p-6 shadow-xl flex flex-col justify-center items-center rounded-lg border-2 border-white z-10 w-32 h-32 sm:w-40 sm:h-40">
-                    <div className="font-grotesk font-black text-4xl sm:text-5xl text-primary">40+</div>
-                    <div className="font-grotesk text-[10px] sm:text-xs uppercase tracking-[0.1em] font-bold text-primary/80 mt-1 text-center">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-secondary-gold p-3 sm:p-4 shadow-xl flex flex-col justify-center items-center rounded-lg border-2 border-white z-10 w-26 h-26 sm:w-32 sm:h-32">
+                    <div className="font-grotesk font-black text-3xl sm:text-4xl text-primary">40+</div>
+                    <div className="font-grotesk text-[8px] sm:text-[10px] uppercase tracking-[0.1em] font-bold text-primary/80 mt-1 text-center leading-normal">
                       Years of<br />Excellence
                     </div>
                   </div>

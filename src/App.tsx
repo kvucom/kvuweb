@@ -2,12 +2,12 @@ import { BrowserRouter, Routes, Route, useLocation, Outlet } from 'react-router-
 import { useEffect, lazy, Suspense, useState } from 'react'
 import NavBar from './components/NavBar'
 import Footer from './components/Footer'
-import HomePage from './pages/HomePage'
 import ProtectedRoute from './components/ProtectedRoute'
 import CampaignBanner from './components/CampaignBanner'
 import { usePopupCampaigns } from './hooks/usePopupCampaigns'
 
 // Lazy loaded public pages
+const HomePage = lazy(() => import('./pages/HomePage'))
 const ProductsPage = lazy(() => import('./pages/ProductsPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
@@ -19,9 +19,11 @@ const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const ManageProducts = lazy(() => import('./pages/admin/ManageProducts'))
 const AddProduct = lazy(() => import('./pages/admin/AddProduct'))
+const EditProduct = lazy(() => import('./pages/admin/EditProduct'))
 const ManageSiteImages = lazy(() => import('./pages/admin/ManageSiteImages'))
 const ManageMediaReviews = lazy(() => import('./pages/admin/ManageMediaReviews'))
 const ManagePopups = lazy(() => import('./pages/admin/ManagePopups'))
+const SubmitReview = lazy(() => import('./pages/SubmitReview'))
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -80,21 +82,25 @@ export default function App() {
             <Route index element={<Suspense fallback={<LoadingSpinner />}><AdminDashboard /></Suspense>} />
             <Route path="products" element={<Suspense fallback={<LoadingSpinner />}><ManageProducts /></Suspense>} />
             <Route path="products/add" element={<Suspense fallback={<LoadingSpinner />}><AddProduct /></Suspense>} />
+            <Route path="products/edit/:id" element={<Suspense fallback={<LoadingSpinner />}><EditProduct /></Suspense>} />
             <Route path="site-images" element={<Suspense fallback={<LoadingSpinner />}><ManageSiteImages /></Suspense>} />
             <Route path="media-reviews" element={<Suspense fallback={<LoadingSpinner />}><ManageMediaReviews /></Suspense>} />
             <Route path="popups" element={<Suspense fallback={<LoadingSpinner />}><ManagePopups /></Suspense>} />
           </Route>
         </Route>
+        
+        {/* Standalone Feedback Submission */}
+        <Route path="/review" element={<Suspense fallback={<LoadingSpinner />}><SubmitReview /></Suspense>} />
 
         {/* Public Routes */}
         <Route element={<PublicLayout />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<Suspense fallback={<LoadingSpinner />}><HomePage /></Suspense>} />
           <Route path="/products" element={<Suspense fallback={<LoadingSpinner />}><ProductsPage /></Suspense>} />
           <Route path="/about" element={<Suspense fallback={<LoadingSpinner />}><AboutPage /></Suspense>} />
           <Route path="/contact" element={<Suspense fallback={<LoadingSpinner />}><ContactPage /></Suspense>} />
           <Route path="/dealership" element={<Suspense fallback={<LoadingSpinner />}><DealershipPage /></Suspense>} />
           <Route path="/delarship" element={<Suspense fallback={<LoadingSpinner />}><DealershipPage /></Suspense>} />
-          <Route path="*" element={<HomePage />} />
+          <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><HomePage /></Suspense>} />
         </Route>
       </Routes>
     </BrowserRouter>

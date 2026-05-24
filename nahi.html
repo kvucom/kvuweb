@@ -67,6 +67,18 @@
             color: #fed65b;
         }
 
+        .logo {
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            font-size: 1rem;
+            opacity: 0.7;
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #fed65b;
+        }
+
         h1 { font-family: 'Space Grotesk', sans-serif; font-size: 3.5rem; margin-bottom: 20px; text-align: center; font-weight: 700; letter-spacing: -0.02em; }
         h2 { font-family: 'Space Grotesk', sans-serif; font-size: 2.6rem; margin-bottom: 30px; color: #fed65b; font-weight: 700; letter-spacing: -0.01em; }
         h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; margin: 20px 0 10px; color: #ffe082; font-weight: 600; }
@@ -129,6 +141,35 @@
         }
         .arrow { font-size: 2.2rem; opacity: 0.6; color: #fed65b; }
         code { background: rgba(254, 214, 91, 0.08); border: 1px solid rgba(254, 214, 91, 0.15); color: #ffe082; padding: 4px 10px; border-radius: 6px; font-size: 0.95em; font-family: monospace; }
+
+        .checklist {
+            text-align: left;
+            max-width: 600px;
+            list-style: none !important;
+        }
+        .checklist li {
+            position: relative;
+            padding-left: 30px;
+        }
+        .checklist li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .team-table {
+            width: 70%;
+        }
+
+        .timeline-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px 40px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
 
         /* Animation delays for individual content items inside active slides */
         .slide > * {
@@ -226,8 +267,9 @@
         <div id="progress-bar" class="progress-bar"></div>
     </div>
 
-    <!-- Presentation Slides -->
+    <!-- Slide 1: Cover -->
     <div class="slide cover">
+        <div class="logo">KRU</div>
         <h1>Krishi Vikas Udyog</h1>
         <div class="tagline">Complete Deployment Plan</div>
         <p>Production-Ready Full Stack Setup<br>Frontend + Backend + Domain + Security</p>
@@ -235,25 +277,31 @@
             <p style="margin-top: 60px;">Prepared by: <strong>Safwan Raza</strong></p>
             <p>May 22, 2026 | Version 1.0</p>
         </div>
-        <div class="slide-number">1 / 10</div>
+        <div class="slide-number">1 / 16</div>
     </div>
 
+    <!-- Slide 2: Agenda -->
     <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Agenda</h2>
         <ul>
             <li>Architecture Overview</li>
-            <li>Phase 1: Pre-Deployment Checklist</li>
-            <li>Phase 2: Frontend Deploy on Vercel</li>
-            <li>Phase 3: Domain DNS Configuration</li>
-            <li>Phase 4: Supabase Security</li>
-            <li>Phase 5: Post-Deployment Testing</li>
+            <li>Phase 1-5: Deployment Steps</li>
             <li>Cost Breakdown</li>
+            <li>Bandwidth & User Capacity</li>
+            <li>CI/CD & Automation</li>
+            <li>Monitoring & Security</li>
+            <li>SEO & Performance</li>
             <li>Future Scaling</li>
+            <li>Risk Mitigation</li>
+            <li>Team & Project Info</li>
         </ul>
-        <div class="slide-number">2 / 10</div>
+        <div class="slide-number">2 / 16</div>
     </div>
 
+    <!-- Slide 3: Architecture -->
     <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Architecture Overview</h2>
         <h3>Tech Stack</h3>
         <div class="grid">
@@ -276,10 +324,12 @@
             <div class="arrow">↓</div>
             <div class="arch-box">Supabase (Backend)</div>
         </div>
-        <div class="slide-number">3 / 10</div>
+        <div class="slide-number">3 / 16</div>
     </div>
 
+    <!-- Slide 4: Phase 1 -->
     <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Phase 1: Pre-Deployment Checklist</h2>
         <h3>Environment Variables</h3>
         <p><code>VITE_SUPABASE_URL</code>, <code>VITE_SUPABASE_ANON_KEY</code><br><code>VITE_EMAILJS_PUBLIC_KEY</code>, <code>SERVICE_ID</code>, <code>TEMPLATE_ID</code></p>
@@ -296,10 +346,12 @@
             <li>Push to GitHub</li>
             <li>Ensure <code>.env</code> is in <code>.gitignore</code></li>
         </ul>
-        <div class="slide-number">4 / 10</div>
+        <div class="slide-number">4 / 16</div>
     </div>
 
+    <!-- Slide 5: Phase 2 -->
     <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Phase 2: Frontend Deploy on Vercel</h2>
         <div class="grid">
             <div class="card">
@@ -319,25 +371,44 @@
                 <p>Trigger new build<br>Verify deployment</p>
             </div>
         </div>
-        <div class="slide-number">5 / 10</div>
+        <div class="slide-number">5 / 16</div>
     </div>
 
+    <!-- Slide 6: Phase 3 -->
     <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Phase 3: Domain DNS Configuration</h2>
         <h3>Add Domain to Vercel</h3>
         <p>Project Settings → Domains → Enter domain</p>
         <h3>DNS Records (Cloudflare)</h3>
         <table>
-            <tr><th>Type</th><th>Name</th><th>Content</th><th>Proxy</th></tr>
-            <tr><td>CNAME</td><td>@</td><td>cname.vercel-dns.com</td><td>DNS only</td></tr>
-            <tr><td>CNAME</td><td>www</td><td>cname.vercel-dns.com</td><td>DNS only</td></tr>
+            <tr>
+                <th>Type</th>
+                <th>Name</th>
+                <th>Content</th>
+                <th>Proxy</th>
+            </tr>
+            <tr>
+                <td>CNAME</td>
+                <td>@</td>
+                <td>cname.vercel-dns.com</td>
+                <td>DNS only</td>
+            </tr>
+            <tr>
+                <td>CNAME</td>
+                <td>www</td>
+                <td>cname.vercel-dns.com</td>
+                <td>DNS only</td>
+            </tr>
         </table>
         <h3>SSL Configuration</h3>
         <p class="highlight">SSL/TLS Mode: Full (Strict)</p>
-        <div class="slide-number">6 / 10</div>
+        <div class="slide-number">6 / 16</div>
     </div>
 
+    <!-- Slide 7: Phase 4 -->
     <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Phase 4: Supabase Security</h2>
         <h3>Row Level Security (RLS)</h3>
         <ul>
@@ -353,10 +424,12 @@
         </ul>
         <h3>Admin User</h3>
         <p>Create in Supabase → Authentication → Users</p>
-        <div class="slide-number">7 / 10</div>
+        <div class="slide-number">7 / 16</div>
     </div>
 
+    <!-- Slide 8: Phase 5 -->
     <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Phase 5: Post-Deployment Testing</h2>
         <div class="grid">
             <div class="card">
@@ -394,39 +467,315 @@
                 </ul>
             </div>
         </div>
-        <div class="slide-number">8 / 10</div>
+        <div class="slide-number">8 / 16</div>
     </div>
 
+    <!-- Slide 9: Cost -->
     <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Cost Breakdown</h2>
         <table>
-            <tr><th>Service</th><th>Plan</th><th>Monthly Cost</th></tr>
-            <tr><td>Vercel</td><td>Hobby</td><td>FREE</td></tr>
-            <tr><td>Supabase</td><td>Free</td><td>FREE</td></tr>
-            <tr><td>Cloudflare</td><td>Free</td><td>FREE</td></tr>
-            <tr><td>EmailJS</td><td>Free</td><td>FREE</td></tr>
+            <tr>
+                <th>Service</th>
+                <th>Plan</th>
+                <th>Monthly Cost</th>
+            </tr>
+            <tr>
+                <td>Vercel</td>
+                <td>Hobby</td>
+                <td>FREE</td>
+            </tr>
+            <tr>
+                <td>Supabase</td>
+                <td>Free</td>
+                <td>FREE</td>
+            </tr>
+            <tr>
+                <td>Cloudflare</td>
+                <td>Free</td>
+                <td>FREE</td>
+            </tr>
+            <tr>
+                <td>EmailJS</td>
+                <td>Free</td>
+                <td>FREE</td>
+            </tr>
         </table>
         <div class="cost-box">
             <h2>Total: ₹0/month</h2>
         </div>
-        <div class="slide-number">9 / 10</div>
+        <div class="slide-number">9 / 16</div>
     </div>
 
+    <!-- Slide 10: Bandwidth & User Capacity -->
     <div class="slide">
+        <div class="logo">KRU</div>
+        <h2>Bandwidth & User Capacity</h2>
+        <div class="cost-box">
+            <h2>100 GB = ~85,000 users/month</h2>
+            <p style="margin-top: 10px; color: #fff;">(~2,800 daily visitors)</p>
+        </div>
+        <h3>User Scenarios</h3>
+        <table>
+            <tr>
+                <th>Behavior</th>
+                <th>Pages/Visit</th>
+                <th>Users/Month</th>
+                <th>Daily</th>
+            </tr>
+            <tr>
+                <td>Quick visit</td>
+                <td>1-2</td>
+                <td>170,000</td>
+                <td>~5,600</td>
+            </tr>
+            <tr>
+                <td>Normal browsing</td>
+                <td>3</td>
+                <td>85,000</td>
+                <td>~2,800</td>
+            </tr>
+            <tr>
+                <td>Deep browsing</td>
+                <td>5</td>
+                <td>51,000</td>
+                <td>~1,700</td>
+            </tr>
+            <tr>
+                <td>Heavy usage</td>
+                <td>10</td>
+                <td>25,000</td>
+                <td>~800</td>
+            </tr>
+        </table>
+        <h3>Supabase Database: 500 MB</h3>
+        <p>= ~250,000+ products stored</p>
+        <p class="highlight" style="margin-top: 20px;">Bandwidth pehle cross hoga, Database nahi!</p>
+        <div class="slide-number">10 / 16</div>
+    </div>
+
+    <!-- Slide 11: CI/CD & Automation -->
+    <div class="slide">
+        <div class="logo">KRU</div>
+        <h2>CI/CD & Automation</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>GitHub Actions</h3>
+                <p>Auto-deploy on push to main<br>Every commit triggers build<br>Zero manual intervention</p>
+            </div>
+            <div class="card">
+                <h3>Preview Deployments</h3>
+                <p>Every PR gets unique URL<br>Test before merging<br>Share with team/clients</p>
+            </div>
+            <div class="card">
+                <h3>Rollback Strategy</h3>
+                <p>One-click revert on Vercel<br>Previous deployments saved<br>Instant recovery</p>
+            </div>
+            <div class="card">
+                <h3>Timeline</h3>
+                <p>Setup + Deploy: 30 min<br>DNS + Security: 45 min<br>Testing: 30 min<br><strong>Total: ~2 hours</strong></p>
+            </div>
+        </div>
+        <h3 style="margin-top: 20px;">Benefits</h3>
+        <ul>
+            <li>Zero downtime deployments</li>
+            <li>Automatic SSL provisioning</li>
+            <li>Git-triggered builds</li>
+        </ul>
+        <div class="slide-number">11 / 16</div>
+    </div>
+
+    <!-- Slide 12: Monitoring & Security -->
+    <div class="slide">
+        <div class="logo">KRU</div>
+        <h2>Monitoring & Security</h2>
+        <h3>Monitoring Tools (Free)</h3>
+        <div class="grid">
+            <div class="card">
+                <h3>Vercel Analytics</h3>
+                <p>Built-in, free<br>Page views, visitors<br>Geographic data</p>
+            </div>
+            <div class="card">
+                <h3>Sentry Error Tracking</h3>
+                <p>Free: 5K errors/month<br>Real-time error alerts<br>Stack traces</p>
+            </div>
+            <div class="card">
+                <h3>UptimeRobot</h3>
+                <p>Free: 50 monitors<br>5-minute checks<br>Email/SMS alerts</p>
+            </div>
+            <div class="card">
+                <h3>Supabase Logs</h3>
+                <p>Database query logs<br>Auth events<br>Storage access</p>
+            </div>
+        </div>
+        <h3 style="margin-top: 20px;">Security Checklist</h3>
+        <ul class="checklist">
+            <li>HTTPS enforced (Vercel auto)</li>
+            <li>RLS policies active (Supabase)</li>
+            <li>Admin routes protected (ProtectedRoute)</li>
+            <li>CORS configured</li>
+            <li>Rate limiting (Vercel built-in)</li>
+            <li>Secret management (env vars, not in code)</li>
+        </ul>
+        <div class="slide-number">12 / 16</div>
+    </div>
+
+    <!-- Slide 13: SEO & Performance -->
+    <div class="slide">
+        <div class="logo">KRU</div>
+        <h2>SEO & Performance</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>SEO Optimization</h3>
+                <ul>
+                    <li>Meta tags (title, description, keywords)</li>
+                    <li>Open Graph images (social sharing)</li>
+                    <li>Sitemap.xml + robots.txt</li>
+                    <li>Canonical URLs</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Performance Targets</h3>
+                <ul>
+                    <li>PageSpeed Score: > 80</li>
+                    <li>First Contentful Paint: < 1.5s</li>
+                    <li>Largest Contentful Paint: < 2.5s</li>
+                    <li>Cumulative Layout Shift: < 0.1</li>
+                </ul>
+            </div>
+        </div>
+        <h3 style="margin-top: 20px;">Current Build Stats</h3>
+        <table>
+            <tr>
+                <th>Metric</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Total Build Size</td>
+                <td>6.1 MB (uncompressed)</td>
+            </tr>
+            <tr>
+                <td>Compressed Size</td>
+                <td>~2 MB (gzip/brotli)</td>
+            </tr>
+            <tr>
+                <td>Average Page Load</td>
+                <td>~400 KB (gzipped)</td>
+            </tr>
+            <tr>
+                <td>Images Format</td>
+                <td>WebP (optimized)</td>
+            </tr>
+        </table>
+        <div class="slide-number">13 / 16</div>
+    </div>
+
+    <!-- Slide 14: Future Scaling -->
+    <div class="slide">
+        <div class="logo">KRU</div>
         <h2>Future Scaling</h2>
         <h3>When to Upgrade</h3>
         <table>
-            <tr><th>Trigger</th><th>Upgrade</th><th>Cost</th></tr>
-            <tr><td>Traffic > 100GB/mo</td><td>Vercel Pro</td><td>$20/mo</td></tr>
-            <tr><td>Database > 500MB</td><td>Supabase Pro</td><td>$25/mo</td></tr>
-            <tr><td>Emails > 200/mo</td><td>EmailJS Growth</td><td>$10/mo</td></tr>
+            <tr>
+                <th>Trigger</th>
+                <th>Upgrade</th>
+                <th>Cost</th>
+            </tr>
+            <tr>
+                <td>Traffic > 100GB/mo</td>
+                <td>Vercel Pro</td>
+                <td>$20/mo</td>
+            </tr>
+            <tr>
+                <td>Database > 500MB</td>
+                <td>Supabase Pro</td>
+                <td>$25/mo</td>
+            </tr>
+            <tr>
+                <td>Emails > 200/mo</td>
+                <td>EmailJS Growth</td>
+                <td>$10/mo</td>
+            </tr>
         </table>
         <div class="cost-box">
             <h2>Pro Total: ~$55/month (~₹4,500/mo)</h2>
         </div>
         <h3 style="margin-top: 40px;">Quick Links</h3>
         <p>vercel.com | supabase.com | cloudflare.com | emailjs.com</p>
-        <div class="slide-number">10 / 10</div>
+        <div class="slide-number">14 / 16</div>
+    </div>
+
+    <!-- Slide 15: Risk Mitigation -->
+    <div class="slide">
+        <div class="logo">KRU</div>
+        <h2>Risk Mitigation</h2>
+        <h3>What Could Go Wrong</h3>
+        <table>
+            <tr>
+                <th>Risk</th>
+                <th>Mitigation</th>
+            </tr>
+            <tr>
+                <td>DNS propagation delay (24-48 hrs)</td>
+                <td>Test DNS before switching nameservers</td>
+            </tr>
+            <tr>
+                <td>Supabase rate limits</td>
+                <td>Monitor dashboard, upgrade if needed</td>
+            </tr>
+            <tr>
+                <td>Build failures on Vercel</td>
+                <td>Keep previous deployment ready</td>
+            </tr>
+            <tr>
+                <td>EmailJS quota exceeded (200/mo)</td>
+                <td>Setup email fallback or upgrade plan</td>
+            </tr>
+        </table>
+        <h3 style="margin-top: 20px;">Backup Strategy</h3>
+        <ul>
+            <li>Database exports weekly</li>
+            <li>Previous deployments saved on Vercel</li>
+            <li>Environment variables documented</li>
+            <li>Rollback plan tested before launch</li>
+        </ul>
+        <div class="slide-number">15 / 16</div>
+    </div>
+
+    <!-- Slide 16: Team & Project Info -->
+    <div class="slide">
+        <div class="logo">KRU</div>
+        <h2>Team & Project Info</h2>
+        <h3>Project Team</h3>
+        <table class="team-table">
+            <tr>
+                <th>Role</th>
+                <th>Person</th>
+            </tr>
+            <tr>
+                <td>Web Developer</td>
+                <td>Safwan Raza (Full Stack)</td>
+            </tr>
+            <tr>
+                <td>Client</td>
+                <td>Krishi Vikas Udyog</td>
+            </tr>
+            <tr>
+                <td>Contact</td>
+                <td>Mr. Ghufran (Marketing Manager)</td>
+            </tr>
+        </table>
+        <div class="timeline-box">
+            <h3>Deployment Timeline</h3>
+            <ul>
+                <li>Setup + Deploy: 30 min</li>
+                <li>DNS + Security: 45 min</li>
+                <li>Testing: 30 min</li>
+                <li><strong>Total: ~2 hours</strong></li>
+            </ul>
+        </div>
+        <h3 style="margin-top: 30px;">Post-Deployment Support: 30 days</h3>
+        <div class="slide-number">16 / 16</div>
     </div>
 
     <!-- Navigation controls -->

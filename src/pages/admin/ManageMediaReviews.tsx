@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Loader2, Image, MessageSquare, Star, Upload, X, RefreshCw, MapPin, ChevronDown, ChevronUp, Link as LinkIcon, Play } from 'lucide-react';
+import { Plus, Trash2, Loader2, Image, MessageSquare, Star, Upload, X, Link as LinkIcon, Play, Check } from 'lucide-react';
 import { parseEmbedUrl, type EmbedPlatform } from '../../lib/embedUtils';
+import { compressImage } from '../../lib/imageUtils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,15 +24,10 @@ interface Review {
   content: string;
   rating: number;
   display_order: number;
+  approved?: boolean;
+  origin?: string;
 }
 
-interface GoogleReview {
-  name: string;
-  role: string;
-  content: string;
-  rating: number;
-  display_order: number;
-}
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -128,9 +124,9 @@ function MediaSection() {
     setMsg({ type: '', text: '' });
 
     try {
-      const ext = file.name.split('.').pop();
-      const path = `gallery/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('images').upload(path, file);
+      const compressedFile = await compressImage(file);
+      const path = `gallery/${Date.now()}.webp`;
+      const { error: upErr } = await supabase.storage.from('images').upload(path, compressedFile);
       if (upErr) throw upErr;
 
       const { data: urlData } = supabase.storage.from('images').getPublicUrl(path);
@@ -295,176 +291,6 @@ function MediaSection() {
   );
 }
 
-// ─── Google Import Panel ───────────────────────────────────────────────────────
-
-function GoogleImportPanel({ onImported }: { onImported: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [placeId, setPlaceId] = useState('');
-  const [fetching, setFetching] = useState(false);
-  const [preview, setPreview] = useState<GoogleReview[] | null>(null);
-  const [placeName, setPlaceName] = useState('');
-  const [overallRating, setOverallRating] = useState<number | null>(null);
-  const [totalRatings, setTotalRatings] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState({ type: '', text: '' });
-
-  const handleFetch = async () => {
-    if (!placeId.trim()) { setMsg({ type: 'error', text: 'Please enter a Place ID.' }); return; }
-    setFetching(true);
-    setMsg({ type: '', text: '' });
-    setPreview(null);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-google-reviews', {
-        body: { placeId: placeId.trim() },
-      });
-
-      if (error) throw error;
-      if (data.error) throw new Error(data.error + (data.detail ? `: ${data.detail}` : ''));
-
-      setPreview(data.reviews);
-      setPlaceName(data.place_name || '');
-      setOverallRating(data.overall_rating || null);
-      setTotalRatings(data.total_ratings || null);
-    } catch (err: unknown) {
-      const errorMessage = err && typeof err === 'object' && 'message' in err ? (err as { message: string }).message : JSON.stringify(err);
-      setMsg({ type: 'error', text: errorMessage });
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  const handleSaveAll = async () => {
-    if (!preview || preview.length === 0) return;
-    setSaving(true);
-    setMsg({ type: '', text: '' });
-
-    try {
-      // Get current max display_order
-      const { data: existing } = await supabase.from('reviews').select('display_order').order('display_order', { ascending: false }).limit(1);
-      const startOrder = (existing?.[0]?.display_order || 0) + 1;
-
-      const toInsert = preview.map((r, i) => ({ ...r, display_order: startOrder + i }));
-      const { error } = await supabase.from('reviews').insert(toInsert);
-      if (error) throw error;
-
-      setMsg({ type: 'success', text: `${preview.length} Google reviews imported successfully!` });
-      setPreview(null);
-      setPlaceId('');
-      onImported();
-    } catch (err: unknown) {
-      const errorMessage = err && typeof err === 'object' && 'message' in err ? (err as { message: string }).message : JSON.stringify(err);
-      setMsg({ type: 'error', text: errorMessage });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="border border-blue-200 dark:border-blue-800 rounded-xl overflow-hidden mb-6">
-      {/* Header Toggle */}
-      <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-5 py-4 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white dark:bg-blue-900 flex items-center justify-center shadow-sm">
-            <span className="text-base">🌐</span>
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Import from Google Reviews</p>
-            <p className="text-xs text-blue-500 dark:text-blue-400">Fetch real customer reviews from your Google Business listing</p>
-          </div>
-        </div>
-        {open ? <ChevronUp size={18} className="text-blue-500" /> : <ChevronDown size={18} className="text-blue-500" />}
-      </button>
-
-      {/* Expandable Body */}
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }} className="overflow-hidden">
-            <div className="p-5 space-y-4 bg-white dark:bg-gray-900">
-
-              {msg.text && (
-                <div className={`text-sm p-3 rounded-lg ${msg.type === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'}`}>
-                  {msg.text}
-                </div>
-              )}
-
-              {/* Place ID input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <MapPin size={13} className="inline mr-1" />Google Place ID
-                </label>
-                <div className="flex gap-2">
-                  <input type="text" value={placeId} onChange={e => setPlaceId(e.target.value)}
-                    placeholder="e.g. ChIJN1t_tDeuEmsRUsoyG83frY4"
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" />
-                  <button type="button" onClick={handleFetch} disabled={fetching || !placeId.trim()}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 transition-colors whitespace-nowrap">
-                    {fetching ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-                    {fetching ? 'Fetching...' : 'Fetch'}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Find your Place ID at{' '}
-                  <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline">developers.google.com/maps → Place ID Finder</a>
-                </p>
-              </div>
-
-              {/* Preview fetched reviews */}
-              {preview && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-                  {/* Place info */}
-                  {placeName && (
-                    <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <span className="text-lg">📍</span>
-                      <div>
-                        <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">{placeName}</p>
-                        <p className="text-xs text-blue-500">
-                          ⭐ {overallRating} overall · {totalRatings?.toLocaleString()} total ratings · {preview.length} reviews fetched
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {preview.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">No reviews found for this Place ID.</p>
-                  ) : (
-                    <>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Preview ({preview.length} reviews)</p>
-                      {preview.map((r, i) => (
-                        <div key={i} className="border border-gray-100 dark:border-gray-800 rounded-xl p-3 flex gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 text-sm font-bold shrink-0">
-                            {r.name.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1 mb-0.5">
-                              {[...Array(5)].map((_, j) => (
-                                <Star key={j} size={11} className={j < r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'} />
-                              ))}
-                            </div>
-                            <p className="text-xs font-semibold text-gray-800 dark:text-white">{r.name}</p>
-                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{r.content || '(No text)'}</p>
-                          </div>
-                        </div>
-                      ))}
-
-                      <button type="button" onClick={handleSaveAll} disabled={saving}
-                        className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold disabled:opacity-60 transition-colors">
-                        {saving ? <><Loader2 size={16} className="animate-spin" /> Saving...</> : <>✅ Save All {preview.length} Reviews to Database</>}
-                      </button>
-                    </>
-                  )}
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 // ─── Reviews Section ───────────────────────────────────────────────────────────
 
@@ -474,6 +300,7 @@ function ReviewsSection() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [form, setForm] = useState({ name: '', role: '', content: '', rating: 5 });
+  const [activeTab, setActiveTab] = useState<'published' | 'pending'>('published');
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -495,11 +322,25 @@ function ReviewsSection() {
     setMsg({ type: '', text: '' });
 
     const nextOrder = reviews.length > 0 ? Math.max(...reviews.map(r => r.display_order)) + 1 : 1;
-    const { error } = await supabase.from('reviews').insert([{ ...form, display_order: nextOrder }]);
+    const { error } = await supabase.from('reviews').insert([{ ...form, display_order: nextOrder, approved: true, origin: 'manual' }]);
 
     if (error) { setMsg({ type: 'error', text: error.message }); }
     else { setMsg({ type: 'success', text: 'Review added!' }); setForm({ name: '', role: '', content: '', rating: 5 }); fetchReviews(); }
     setSaving(false);
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      const nextOrder = reviews.length > 0 ? Math.max(...reviews.map(r => r.display_order)) + 1 : 1;
+      const { error } = await supabase
+        .from('reviews')
+        .update({ approved: true, display_order: nextOrder })
+        .eq('id', id);
+      if (error) throw error;
+      fetchReviews();
+    } catch (err: unknown) {
+      alert(err && typeof err === 'object' && 'message' in err ? (err as { message: string }).message : JSON.stringify(err));
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -513,14 +354,68 @@ function ReviewsSection() {
     }
   };
 
+  const publishedReviews = reviews.filter(r => r.approved !== false);
+  const pendingReviews = reviews.filter(r => r.approved === false);
+  const activeReviews = activeTab === 'published' ? publishedReviews : pendingReviews;
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
         <MessageSquare size={20} className="text-green-500" /> Client Reviews
       </h2>
 
-      {/* Google Import Panel */}
-      <GoogleImportPanel onImported={fetchReviews} />
+      {/* Office QR Code Generator Widget */}
+      <div className="border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-5 mb-8 bg-gray-50/50 dark:bg-gray-800/10 space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-ping shrink-0" />
+          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Office QR Code Generator</p>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          Print this QR code and paste it in your office/store. Customers can scan it with their phone to instantly open the feedback form.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
+          <div className="bg-white p-3 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm shrink-0">
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/review`)}`}
+              alt="Office QR Code"
+              className="w-36 h-36"
+            />
+          </div>
+          <div className="space-y-3.5 w-full">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 mb-1">Feedback Link URL</p>
+              <div className="text-xs font-mono bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800 break-all select-all dark:text-gray-300">
+                {window.location.origin}/review
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(`${window.location.origin}/review`)}`;
+                  const response = await fetch(qrUrl);
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'krishi_vikas_review_qr.png';
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  window.URL.revokeObjectURL(url);
+                } catch (err) {
+                  console.error('Failed to download QR code', err);
+                }
+              }}
+              className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-2 shadow-sm shadow-green-600/10 active:scale-98"
+            >
+              <Upload size={14} className="rotate-180" /> Download QR Image (PNG)
+            </button>
+          </div>
+        </div>
+      </div>
+
 
       {/* Manual Add Form */}
       <form onSubmit={handleAdd} className="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-5 mb-6 space-y-4">
@@ -556,15 +451,50 @@ function ReviewsSection() {
         </button>
       </form>
 
+      {/* Tabs Header */}
+      <div className="flex gap-2 border-b border-gray-100 dark:border-gray-800 mb-6 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('published')}
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+            activeTab === 'published'
+              ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400'
+              : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          Published ({publishedReviews.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('pending')}
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 ${
+            activeTab === 'pending'
+              ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400'
+              : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          Pending Queue ({pendingReviews.length})
+          {pendingReviews.length > 0 && (
+            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold animate-pulse">
+              {pendingReviews.length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Reviews List */}
       {loading ? (
         <div className="flex justify-center py-8"><Loader2 className="animate-spin text-green-500" size={28} /></div>
-      ) : reviews.length === 0 ? (
-        <p className="text-center text-gray-400 py-8 text-sm">No reviews yet. Import from Google or add manually.</p>
+      ) : activeReviews.length === 0 ? (
+        <p className="text-center text-gray-400 py-8 text-sm">
+          {activeTab === 'published' 
+            ? 'No published reviews yet. Import from Google or add manually.' 
+            : 'No pending reviews in the queue.'}
+        </p>
       ) : (
         <AnimatePresence>
           <div className="space-y-3">
-            {reviews.map(r => (
+            {activeReviews.map(r => (
               <motion.div key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="border border-gray-100 dark:border-gray-800 rounded-xl p-4 flex gap-4 items-start">
                 <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-400 font-bold shrink-0">
@@ -577,13 +507,28 @@ function ReviewsSection() {
                     ))}
                   </div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 italic mb-1.5 line-clamp-2">"{r.content}"</p>
-                  <p className="text-xs font-semibold text-gray-900 dark:text-white">{r.name}</p>
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    {r.name}
+                    {r.origin === 'qr' && (
+                      <span className="px-1.5 py-0.5 text-[10px] bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-md font-medium uppercase tracking-wider">
+                        QR Code
+                      </span>
+                    )}
+                  </p>
                   {r.role && <p className="text-xs text-gray-400">{r.role}</p>}
                 </div>
-                <button onClick={() => handleDelete(r.id)}
-                  className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors shrink-0">
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {activeTab === 'pending' && (
+                    <button onClick={() => handleApprove(r.id)} title="Approve Review"
+                      className="text-green-500 hover:text-green-600 p-1.5 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors animate-bounce">
+                      <Check size={16} />
+                    </button>
+                  )}
+                  <button onClick={() => handleDelete(r.id)} title="Delete Review"
+                    className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </motion.div>
             ))}
           </div>
