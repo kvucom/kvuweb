@@ -72,8 +72,15 @@ export default function DealershipPage() {
   ]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    if (name === 'phoneInput') {
+      const nums = value.replace(/\D/g, '')
+      if (nums.length <= 10) setForm(prev => ({ ...prev, phone: nums }))
+    } else {
+      setForm(prev => ({ ...prev, [name]: value }))
+    }
   }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,7 +95,8 @@ export default function DealershipPage() {
         const diffMs = Date.now() - lastSubmit.timestamp
         const hoursLeft = 24 - (diffMs / (1000 * 60 * 60))
         
-        if (diffMs < 24 * 60 * 60 * 1000 && (lastSubmit.email === form.email || lastSubmit.phone === form.phone)) {
+        const fullPhone = `+91 ${form.phone}`
+        if (diffMs < 24 * 60 * 60 * 1000 && (lastSubmit.email === form.email || lastSubmit.phone === fullPhone)) {
           setError(`You have already submitted a request in the last 24 hours. Please wait another ${Math.ceil(hoursLeft)} hours or contact us directly.`)
           setLoading(false)
           return
@@ -112,7 +120,7 @@ export default function DealershipPage() {
         const { error: dbInsertErr } = await supabase.from('dealership_applications').insert([{
           name: form.name,
           email: form.email || null,
-          phone: form.phone,
+          phone: `+91 ${form.phone}`,
           business_name: form.firm,
           gst_no: form.gst || null,
           location: form.location,
@@ -146,7 +154,7 @@ export default function DealershipPage() {
         localStorage.setItem('dealership_last_submit', JSON.stringify({
           timestamp: Date.now(),
           email: form.email,
-          phone: form.phone
+          phone: `${form.countryCode} ${form.phone}`
         }))
       } catch (e) {
         console.error('Failed to save submit timestamp:', e)
@@ -372,17 +380,19 @@ export default function DealershipPage() {
                       <label className="font-grotesk text-xs uppercase tracking-widest text-on-surface-variant dark:text-gray-400 block mb-2 font-bold">
                         {t('dealership.form.phone')} *
                       </label>
-                      <div className="relative">
+                      <div className="flex items-end gap-0">
+                        <span className="border-b border-gray-200 dark:border-gray-800 py-3 pr-2 font-manrope text-sm text-primary dark:text-white select-none">+91</span>
                         <input 
                           required 
                           type="tel"
-                          name="phone" 
+                          name="phoneInput" 
                           value={form.phone} 
                           onChange={handleChange}
-                          placeholder="+91 XXXXX XXXXX"
-                          className="w-full border-b border-gray-200 dark:border-gray-800 bg-transparent py-3 font-manrope text-sm focus:outline-none focus:border-primary dark:focus:border-secondary-gold text-primary dark:text-white transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-700" 
+                          placeholder="10 digit number"
+                          className="flex-1 border-b border-gray-200 dark:border-gray-800 bg-transparent py-3 font-manrope text-sm focus:outline-none focus:border-primary dark:focus:border-secondary-gold text-primary dark:text-white transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-700" 
                         />
                       </div>
+                      <input type="hidden" name="phone" value={`+91 ${form.phone}`} />
                     </div>
 
                     {/* Email */}

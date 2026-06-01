@@ -43,8 +43,15 @@ export default function ContactPage() {
   ]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    if (name === 'phoneInput') {
+      const nums = value.replace(/\D/g, '')
+      if (nums.length <= 10) setForm(f => ({ ...f, phone: nums }))
+    } else {
+      setForm(f => ({ ...f, [name]: value }))
+    }
   }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +66,8 @@ export default function ContactPage() {
         const diffMs = Date.now() - lastSubmit.timestamp
         const hoursLeft = 24 - (diffMs / (1000 * 60 * 60))
         
-        if (diffMs < 24 * 60 * 60 * 1000 && (lastSubmit.email === form.email || lastSubmit.phone === form.phone)) {
+        const fullPhone = `+91 ${form.phone}`
+        if (diffMs < 24 * 60 * 60 * 1000 && (lastSubmit.email === form.email || lastSubmit.phone === fullPhone)) {
           setError(`You have already submitted an inquiry in the last 24 hours. Please wait another ${Math.ceil(hoursLeft)} hours or call us directly.`)
           setLoading(false)
           return
@@ -91,7 +99,7 @@ export default function ContactPage() {
         localStorage.setItem('contact_last_submit', JSON.stringify({
           timestamp: Date.now(),
           email: form.email,
-          phone: form.phone
+          phone: `+91 ${form.phone}`
         }))
       } catch (err) {
         console.error('Failed to save submit timestamp:', err)
@@ -190,8 +198,12 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <label className="font-grotesk text-label uppercase tracking-widest text-outline block mb-2">{t('contact.form.phone')} *</label>
-                      <input required name="phone" value={form.phone} onChange={handleChange} placeholder={t('contact.form.phonePH')} type="tel"
-                        className="w-full border-b-2 border-outline-variant bg-transparent py-3 font-manrope text-body focus:outline-none focus:border-primary transition-colors placeholder:text-outline" />
+                      <div className="flex items-end gap-0">
+                        <span className="border-b-2 border-outline-variant py-3 pr-2 font-manrope text-body text-on-surface select-none">+91</span>
+                        <input required name="phoneInput" value={form.phone} onChange={handleChange} placeholder="10 digit number" type="tel"
+                          className="flex-1 border-b-2 border-outline-variant bg-transparent py-3 font-manrope text-body focus:outline-none focus:border-primary transition-colors placeholder:text-outline" />
+                      </div>
+                      <input type="hidden" name="phone" value={`+91 ${form.phone}`} />
                     </div>
                   </div>
 

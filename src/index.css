@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,FILL@20..48,0..1&display=swap');
+/* Fonts loaded asynchronously via <link> in index.html — no render-blocking @import */
+/* Fallback font stacks ensure text is visible immediately (font-display: swap) */
+
 
 @tailwind base;
 @tailwind components;
