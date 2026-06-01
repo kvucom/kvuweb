@@ -154,7 +154,7 @@ export default function DealershipPage() {
         localStorage.setItem('dealership_last_submit', JSON.stringify({
           timestamp: Date.now(),
           email: form.email,
-          phone: `${form.countryCode} ${form.phone}`
+          phone: `+91 ${form.phone}`
         }))
       } catch (e) {
         console.error('Failed to save submit timestamp:', e)
