@@ -34,3 +34,9 @@ dist-ssr
 graphify-out/
 temp_query.js
 
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
